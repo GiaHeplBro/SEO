@@ -2,27 +2,30 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
-  Users, 
-  CheckSquare, 
-  BarChart3, 
-  ShieldAlert, 
-  Settings
+  Search, 
+  FileSearch, 
+  Code, 
+  Link2,
+  Sparkles,
+  Settings,
+  Rocket
 } from "lucide-react";
 
 const menuItems = [
   {
-    category: "Main",
+    category: "SEO Tools",
     items: [
       { name: "Dashboard", icon: <LayoutDashboard className="mr-3 h-5 w-5" />, path: "/" },
-      { name: "Clients", icon: <Users className="mr-3 h-5 w-5" />, path: "/clients" },
-      { name: "Tasks", icon: <CheckSquare className="mr-3 h-5 w-5" />, path: "/tasks" },
-      { name: "Reports", icon: <BarChart3 className="mr-3 h-5 w-5" />, path: "/reports" },
+      { name: "Keyword Analysis", icon: <Search className="mr-3 h-5 w-5" />, path: "/keyword-analysis" },
+      { name: "SEO Audit", icon: <FileSearch className="mr-3 h-5 w-5" />, path: "/seo-audit" },
+      { name: "On-Page Optimization", icon: <Code className="mr-3 h-5 w-5" />, path: "/on-page-optimization" },
+      { name: "Backlink Analysis", icon: <Link2 className="mr-3 h-5 w-5" />, path: "/backlink-analysis" },
+      { name: "Content Optimization", icon: <Sparkles className="mr-3 h-5 w-5" />, path: "/content-optimization" },
     ],
   },
   {
     category: "Settings",
     items: [
-      { name: "Audit Logs", icon: <ShieldAlert className="mr-3 h-5 w-5" />, path: "/audit-logs" },
       { name: "Settings", icon: <Settings className="mr-3 h-5 w-5" />, path: "/settings" },
     ],
   },
@@ -44,15 +47,16 @@ export default function Sidebar() {
       
       {/* Sidebar */}
       <aside 
-        className={`bg-white w-64 h-full shadow-md ${
+        className={`bg-white dark:bg-gray-900 w-64 h-full shadow-md ${
           sidebarOpen ? "fixed inset-y-0 left-0 z-50" : "hidden"
         } md:block overflow-y-auto`}
       >
-        <div className="p-4 border-b border-neutral-200">
-          <h1 className="text-xl font-medium text-primary flex items-center">
-            <Users className="mr-2 h-6 w-6" />
-            ClientTrack PM
+        <div className="p-4 border-b border-neutral-200 dark:border-gray-700">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent flex items-center">
+            <Rocket className="mr-2 h-6 w-6 text-blue-500" />
+            SEOBoostAI
           </h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">AI-powered SEO Platform</p>
         </div>
         
         <div className="py-2">
@@ -69,8 +73,8 @@ export default function Sidebar() {
                     href={item.path}
                     className={`sidebar-menu-item flex items-center px-4 py-3 ${
                       isActive 
-                        ? "text-primary active" 
-                        : "text-neutral-400 hover:text-primary"
+                        ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 font-medium" 
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400"
                     }`}
                   >
                     {item.icon}
@@ -83,12 +87,12 @@ export default function Sidebar() {
         </div>
       </aside>
       
-      {/* Mobile menu button - rendered in the Header component */}
+      {/* Mobile menu button */}
       <button 
-        className="md:hidden fixed bottom-4 right-4 z-50 bg-primary text-white p-3 rounded-full shadow-lg"
+        className="md:hidden fixed bottom-4 right-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
-        <Users className="h-6 w-6" />
+        <Rocket className="h-6 w-6" />
       </button>
     </>
   );
