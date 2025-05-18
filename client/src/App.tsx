@@ -9,7 +9,6 @@ import SeoAudit from "@/pages/seo-audit";
 import OnPageOptimization from "@/pages/on-page-optimization";
 import BacklinkAnalysis from "@/pages/backlink-analysis";
 import ContentOptimization from "@/pages/content-optimization";
-import Settings from "@/pages/settings";
 
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
@@ -28,7 +27,6 @@ function Router() {
             <Route path="/on-page-optimization" component={OnPageOptimization} />
             <Route path="/backlink-analysis" component={BacklinkAnalysis} />
             <Route path="/content-optimization" component={ContentOptimization} />
-            <Route path="/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>
         </main>

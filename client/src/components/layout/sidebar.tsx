@@ -22,13 +22,7 @@ const menuItems = [
       { name: "Backlink Analysis", icon: <Link2 className="mr-3 h-5 w-5" />, path: "/backlink-analysis" },
       { name: "Content Optimization", icon: <Sparkles className="mr-3 h-5 w-5" />, path: "/content-optimization" },
     ],
-  },
-  {
-    category: "Settings",
-    items: [
-      { name: "Settings", icon: <Settings className="mr-3 h-5 w-5" />, path: "/settings" },
-    ],
-  },
+  }
 ];
 
 export default function Sidebar() {
