@@ -13,6 +13,7 @@ import {
 } from "./storage";
 import * as schema from "@shared/schema";
 import { z } from "zod";
+import { registerSEORoutes } from "./seo-routes";
 
 // Use z.ZodError instead of ZodError
 type ZodError = z.ZodError;
@@ -57,6 +58,9 @@ const logAuditEvent = async (
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  
+  // Register SEO routes
+  registerSEORoutes(app);
 
   // Authentication - get current user (simplified for demo)
   app.get("/api/auth/me", (req, res) => {

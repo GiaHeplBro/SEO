@@ -209,6 +209,156 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs);
 export const insertSettingSchema = createInsertSchema(settings);
 export const insertComplianceMetricSchema = createInsertSchema(complianceMetrics);
 
+// SEO Website Table - Stores websites being analyzed
+export const websites = pgTable("websites", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  url: text("url").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  industryType: varchar("industry_type", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastAnalyzedAt: timestamp("last_analyzed_at"),
+  seoScore: integer("seo_score"),
+  status: varchar("status", { length: 50 }).default("active").notNull(),
+});
+
+export const websitesRelations = relations(websites, ({ one, many }) => ({
+  user: one(users, {
+    fields: [websites.userId],
+    references: [users.id],
+  }),
+  seoAudits: many(seoAudits),
+  keywords: many(keywords),
+}));
+
+// SEO Audit Table - Stores website audit results
+export const seoAudits = pgTable("seo_audits", {
+  id: serial("id").primaryKey(),
+  websiteId: integer("website_id").references(() => websites.id).notNull(),
+  auditDate: timestamp("audit_date").defaultNow().notNull(),
+  overallScore: integer("overall_score").notNull(),
+  metaData: jsonb("meta_data"), // Title tags, meta descriptions, etc.
+  contentData: jsonb("content_data"), // Content quality, headings, etc.
+  technicalData: jsonb("technical_data"), // Page speed, mobile-friendliness, etc.
+  backlinkData: jsonb("backlink_data"), // Backlink quality and quantity
+  criteriaResults: jsonb("criteria_results"), // Detailed breakdown of audit results
+  recommendations: jsonb("recommendations"), // Specific improvement recommendations
+});
+
+export const seoAuditsRelations = relations(seoAudits, ({ one }) => ({
+  website: one(websites, {
+    fields: [seoAudits.websiteId],
+    references: [websites.id],
+  }),
+}));
+
+// Keywords Table - Stores tracked keywords
+export const keywords = pgTable("keywords", {
+  id: serial("id").primaryKey(),
+  websiteId: integer("website_id").references(() => websites.id).notNull(),
+  keyword: text("keyword").notNull(),
+  searchVolume: integer("search_volume"),
+  difficulty: integer("difficulty"), // 0-100 scale
+  currentRanking: integer("current_ranking"),
+  previousRanking: integer("previous_ranking"),
+  searchIntent: varchar("search_intent", { length: 50 }),
+  cpc: decimal("cpc", { precision: 10, scale: 2 }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  competition: varchar("competition", { length: 50 }),
+  trending: varchar("trending", { length: 20 }),
+  status: varchar("status", { length: 20 }).default("tracking").notNull(),
+});
+
+export const keywordsRelations = relations(keywords, ({ one }) => ({
+  website: one(websites, {
+    fields: [keywords.websiteId],
+    references: [websites.id],
+  }),
+}));
+
+// Backlinks Table - Stores backlink data
+export const backlinks = pgTable("backlinks", {
+  id: serial("id").primaryKey(),
+  websiteId: integer("website_id").references(() => websites.id).notNull(),
+  sourceUrl: text("source_url").notNull(),
+  targetUrl: text("target_url").notNull(),
+  anchorText: text("anchor_text"),
+  firstDiscovered: timestamp("first_discovered").defaultNow().notNull(),
+  lastChecked: timestamp("last_checked").defaultNow().notNull(),
+  status: varchar("status", { length: 50 }).default("active").notNull(),
+  doFollow: boolean("do_follow").default(true).notNull(),
+  domainAuthority: integer("domain_authority"),
+  pageAuthority: integer("page_authority"),
+  toxicityScore: integer("toxicity_score"),
+  sourceTraffic: integer("source_traffic"),
+});
+
+export const backlinksRelations = relations(backlinks, ({ one }) => ({
+  website: one(websites, {
+    fields: [backlinks.websiteId],
+    references: [websites.id],
+  }),
+}));
+
+// Content Optimizations Table - Stores content optimization history
+export const contentOptimizations = pgTable("content_optimizations", {
+  id: serial("id").primaryKey(),
+  websiteId: integer("website_id").references(() => websites.id).notNull(),
+  pageUrl: text("page_url").notNull(),
+  targetKeyword: text("target_keyword").notNull(),
+  originalContent: text("original_content"),
+  optimizedContent: text("optimized_content"),
+  seoScore: integer("seo_score"),
+  readabilityScore: integer("readability_score"),
+  optimizationDate: timestamp("optimization_date").defaultNow().notNull(),
+  optimizationSettings: jsonb("optimization_settings"), // User's settings for optimization
+  aiGenerationPrompt: text("ai_generation_prompt"),
+  suggestions: jsonb("suggestions"), // List of improvement suggestions
+});
+
+export const contentOptimizationsRelations = relations(contentOptimizations, ({ one }) => ({
+  website: one(websites, {
+    fields: [contentOptimizations.websiteId],
+    references: [websites.id],
+  }),
+}));
+
+// On-Page Optimizations Table - Stores on-page element optimizations
+export const onPageOptimizations = pgTable("on_page_optimizations", {
+  id: serial("id").primaryKey(),
+  websiteId: integer("website_id").references(() => websites.id).notNull(),
+  pageUrl: text("page_url").notNull(),
+  elementType: varchar("element_type", { length: 50 }).notNull(), // title, meta_description, h1, etc.
+  originalValue: text("original_value"),
+  optimizedValue: text("optimized_value"),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, applied, rejected
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  appliedAt: timestamp("applied_at"),
+  recommendations: text("recommendations"),
+  importance: integer("importance"), // 0-100 scale
+});
+
+export const onPageOptimizationsRelations = relations(onPageOptimizations, ({ one }) => ({
+  website: one(websites, {
+    fields: [onPageOptimizations.websiteId],
+    references: [websites.id],
+  }),
+}));
+
+// Create insert schemas for validation
+export const insertWebsiteSchema = createInsertSchema(websites, {
+  url: (schema) => schema.url("Must provide a valid URL").min(5, "URL must be at least 5 characters"),
+  name: (schema) => schema.min(2, "Name must be at least 2 characters"),
+});
+
+export const insertSeoAuditSchema = createInsertSchema(seoAudits);
+export const insertKeywordSchema = createInsertSchema(keywords);
+export const insertBacklinkSchema = createInsertSchema(backlinks);
+export const insertContentOptimizationSchema = createInsertSchema(contentOptimizations);
+export const insertOnPageOptimizationSchema = createInsertSchema(onPageOptimizations);
+
 // Exported types for use in the application
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -233,3 +383,22 @@ export type InsertSetting = z.infer<typeof insertSettingSchema>;
 
 export type ComplianceMetric = typeof complianceMetrics.$inferSelect;
 export type InsertComplianceMetric = z.infer<typeof insertComplianceMetricSchema>;
+
+// New SEO types
+export type Website = typeof websites.$inferSelect;
+export type InsertWebsite = z.infer<typeof insertWebsiteSchema>;
+
+export type SeoAudit = typeof seoAudits.$inferSelect;
+export type InsertSeoAudit = z.infer<typeof insertSeoAuditSchema>;
+
+export type Keyword = typeof keywords.$inferSelect;
+export type InsertKeyword = z.infer<typeof insertKeywordSchema>;
+
+export type Backlink = typeof backlinks.$inferSelect;
+export type InsertBacklink = z.infer<typeof insertBacklinkSchema>;
+
+export type ContentOptimization = typeof contentOptimizations.$inferSelect;
+export type InsertContentOptimization = z.infer<typeof insertContentOptimizationSchema>;
+
+export type OnPageOptimization = typeof onPageOptimizations.$inferSelect;
+export type InsertOnPageOptimization = z.infer<typeof insertOnPageOptimizationSchema>;
