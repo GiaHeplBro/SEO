@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Search, Rocket, TrendingUp, BarChart2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,73 +5,25 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState } from "react";
+import api from "@/axiosInstance"; // Đường dẫn đến file bạn vừa tạo
 
-// Mock data for keyword analysis
-const keywordData = [
-  { 
-    keyword: "content optimization",
-    volume: 8700,
-    difficulty: 65,
-    cpc: 2.85,
-    competition: "High",
-    trend: "up",
-    intent: "commercial"
-  },
-  { 
-    keyword: "keyword research tool",
-    volume: 12500,
-    difficulty: 75,
-    cpc: 4.25,
-    competition: "High",
-    trend: "up",
-    intent: "commercial"
-  },
-  { 
-    keyword: "seo content strategy",
-    volume: 6300,
-    difficulty: 58,
-    cpc: 3.15,
-    competition: "Medium",
-    trend: "up",
-    intent: "informational"
-  },
-  { 
-    keyword: "seo tools free",
-    volume: 22800,
-    difficulty: 80,
-    cpc: 5.10,
-    competition: "Very High",
-    trend: "up",
-    intent: "commercial"
-  },
-  { 
-    keyword: "how to improve seo ranking",
-    volume: 9600,
-    difficulty: 48,
-    cpc: 2.50,
-    competition: "Medium",
-    trend: "stable",
-    intent: "informational"
-  },
-  { 
-    keyword: "on page optimization techniques",
-    volume: 5100,
-    difficulty: 45,
-    cpc: 2.75,
-    competition: "Medium",
-    trend: "up",
-    intent: "informational"
-  },
-  { 
-    keyword: "backlink analysis tool",
-    volume: 4200,
-    difficulty: 60,
-    cpc: 3.80,
-    competition: "High",
-    trend: "stable",
-    intent: "commercial"
-  }
-];
+type KeywordItem = {
+  keyword: string;
+  volume: number;
+  difficulty: number;
+  cpc: number;
+  competition: string;
+  trend: string;
+  intent: string;
+};
+
+type RankTrackingItem = {
+  id: number;
+  userId: number;
+  keyword: string;
+  rank: number;
+};
 
 // Suggested keywords based on seed
 const suggestedKeywords = [
@@ -87,7 +38,48 @@ const suggestedKeywords = [
 export default function KeywordAnalysis() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("research");
-  
+  const [keywordData, setKeywordData] = useState<KeywordItem[]>([]);
+  const [rankTrackings, setRankTrackings] = useState<RankTrackingItem[]>([]);
+
+
+  useEffect(() => {
+    fetchKeywords();
+    fetchRankTrackings();
+  }, []);
+
+const fetchKeywords = async () => {
+  try {
+    const res = await api.get("/Keywords");
+    const rawData = res.data;
+
+    if (Array.isArray(rawData)) {
+      const mappedData = rawData.map((item: any) => ({
+        keyword: item.keyword1,
+        volume: item.searchVolume,
+        difficulty: item.difficulty,
+        cpc: item.cpc,
+        competition: item.competition,
+        intent: item.intent,
+        trend: item.trend,
+      }));
+      setKeywordData(mappedData);
+    } else {
+      console.error("API không trả về mảng:", rawData);
+    }
+  } catch (err) {
+    console.error("Lỗi khi gọi API:", err);
+  }
+};
+
+const fetchRankTrackings = async () => {
+    try {
+      const res = await api.get("/RankTrackings");
+      setRankTrackings(res.data);
+    } catch (err) {
+      console.error("Lỗi khi gọi API RankTrackings:", err);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
@@ -100,10 +92,9 @@ export default function KeywordAnalysis() {
       <Tabs defaultValue="research" onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-3 mb-4">
           <TabsTrigger value="research">Keyword Research</TabsTrigger>
-          <TabsTrigger value="suggestions">Keyword Suggestions</TabsTrigger>
           <TabsTrigger value="tracking">Rank Tracking</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="research" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
@@ -121,14 +112,26 @@ export default function KeywordAnalysis() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <Button className="flex items-center gap-2">
+                <Button
+                  className="flex items-center gap-2"
+                  onClick={async () => {
+                    try {
+                      await api.post("/Keywords", { keyword: searchTerm });
+                      fetchKeywords(); // fetch lại danh sách
+                      setSearchTerm(""); // clear input nếu muốn
+                    } catch (err) {
+                      console.error("Lỗi khi thêm keyword:", err);
+                    }
+                  }}
+                >
                   <Rocket className="h-4 w-4" />
                   <span>Analyze</span>
                 </Button>
+
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
               <CardTitle>Keyword Analysis Results</CardTitle>
@@ -155,11 +158,10 @@ export default function KeywordAnalysis() {
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center">
                           <div className="w-12 h-2 bg-gray-200 rounded-full mr-2">
-                            <div 
-                              className={`h-full rounded-full ${
-                                item.difficulty > 70 ? "bg-red-500" :
-                                item.difficulty > 50 ? "bg-yellow-500" : "bg-green-500"
-                              }`}
+                            <div
+                              className={`h-full rounded-full ${item.difficulty > 70 ? "bg-red-500" :
+                                  item.difficulty > 50 ? "bg-yellow-500" : "bg-green-500"
+                                }`}
                               style={{ width: `${item.difficulty}%` }}
                             />
                           </div>
@@ -170,8 +172,8 @@ export default function KeywordAnalysis() {
                       <TableCell className="text-center">
                         <Badge variant={
                           item.competition === "Very High" ? "destructive" :
-                          item.competition === "High" ? "destructive" :
-                          item.competition === "Medium" ? "secondary" : "outline"
+                            item.competition === "High" ? "destructive" :
+                              item.competition === "Medium" ? "secondary" : "outline"
                         } className={item.competition === "Medium" ? "bg-amber-100 text-amber-700 border-amber-200" : ""}>
                           {item.competition}
                         </Badge>
@@ -182,8 +184,8 @@ export default function KeywordAnalysis() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        {item.trend === "up" ? 
-                          <TrendingUp className="inline h-4 w-4 text-green-500" /> : 
+                        {item.trend === "up" ?
+                          <TrendingUp className="inline h-4 w-4 text-green-500" /> :
                           <BarChart2 className="inline h-4 w-4 text-yellow-500" />}
                       </TableCell>
                     </TableRow>
@@ -239,21 +241,44 @@ export default function KeywordAnalysis() {
           </Card>
         </TabsContent>
 
+{/* Rank Tracking  */}
+
         <TabsContent value="tracking" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Keyword Rank Tracking</CardTitle>
               <CardDescription>Monitor your keyword positions over time</CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center justify-center p-12">
-              <div className="text-center">
-                <BarChart2 className="h-12 w-12 mx-auto text-gray-400" />
-                <h3 className="mt-4 text-lg font-medium">No tracked keywords yet</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Start tracking keywords to see their ranking progress over time
-                </p>
-                <Button className="mt-4">Add Keywords to Track</Button>
-              </div>
+            <CardContent>
+              {rankTrackings.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Keyword</TableHead>
+                      <TableHead className="text-center">Rank</TableHead>
+                      <TableHead className="text-center">User ID</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rankTrackings.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.keyword}</TableCell>
+                        <TableCell className="text-center">{item.rank}</TableCell>
+                        <TableCell className="text-center">{item.userId}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center p-12">
+                  <BarChart2 className="h-12 w-12 mx-auto text-gray-400" />
+                  <h3 className="mt-4 text-lg font-medium">No tracked keywords yet</h3>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Start tracking keywords to see their ranking progress over time
+                  </p>
+                  <Button className="mt-4">Add Keywords to Track</Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

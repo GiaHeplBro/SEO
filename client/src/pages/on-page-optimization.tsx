@@ -1,139 +1,213 @@
-import { useState } from "react";
-import { Globe, Search, Check, Info, AlertTriangle, Code, FileText, Edit, Heading1, Heading2, Image } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Globe, Search, Check, Info, AlertTriangle, Code, FileText, Edit, Heading1, Heading2, Image, Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Slider } from "@/components/ui/slider";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// Mock data for on-page elements
-const pageElements = [
-  {
-    type: "title",
-    current: "Best SEO Strategies for 2023 | Increase Traffic & Rankings",
-    status: "good",
-    recommendation: "Good length and includes target keywords. Consider moving main keyword closer to the beginning.",
-    importance: 90
-  },
-  {
-    type: "meta_description",
-    current: "Learn the best SEO strategies for 2023. Our guide covers technical, on-page, and off-page tactics to boost your rankings and increase organic traffic.",
-    status: "good",
-    recommendation: "Good length and includes target keywords with a clear call to action.",
-    importance: 85
-  },
-  {
-    type: "h1",
-    current: "The Ultimate Guide to SEO Strategies for 2023",
-    status: "good",
-    recommendation: "Good H1 that includes main keyword. Clear and concise.",
-    importance: 80
-  },
-  {
-    type: "url",
-    current: "https://example.com/seo-strategies-for-2023",
-    status: "good",
-    recommendation: "Clean URL structure with target keyword included.",
-    importance: 75
-  },
-  {
-    type: "content_length",
-    current: "1250 words",
-    status: "warning",
-    recommendation: "Content is a bit short for this topic. Aim for 2000+ words to cover the topic comprehensively.",
-    importance: 70
-  },
-  {
-    type: "keyword_density",
-    current: "Primary: 2.8%, Secondary: 1.5%",
-    status: "warning",
-    recommendation: "Primary keyword density is slightly high. Aim for 1.5-2.5% for optimal results.",
-    importance: 65
-  },
-  {
-    type: "h2_tags",
-    current: "5 H2 tags (3 contain target keywords)",
-    status: "good",
-    recommendation: "Good structure with keywords in most H2s. Consider adding keywords to all H2s where relevant.",
-    importance: 65
-  },
-  {
-    type: "images",
-    current: "4 images (2 missing alt text)",
-    status: "error",
-    recommendation: "Add descriptive alt text with keywords to all images for better accessibility and SEO.",
-    importance: 60
-  },
-  {
-    type: "internal_links",
-    current: "7 internal links",
-    status: "good",
-    recommendation: "Good number of internal links. Consider adding 2-3 more to relevant content.",
-    importance: 60
-  },
-  {
-    type: "external_links",
-    current: "2 external links",
-    status: "warning",
-    recommendation: "Add more high-quality external links to authoritative sources to increase credibility.",
-    importance: 55
-  }
-];
+import api from "@/axiosInstance"; // Import axiosInstance của bạn
+import React from "react";
 
-// Content optimization suggestions
-const contentSuggestions = [
-  "Add more comprehensive sections on technical SEO practices",
-  "Include case studies or success stories with real metrics",
-  "Expand the section on mobile SEO optimization",
-  "Add a FAQ section addressing common SEO questions",
-  "Include more visual content like infographics",
-  "Add section on local SEO strategies for businesses"
-];
+// Định nghĩa kiểu dữ liệu cho Element từ API của bạn
+interface Element {
+  id: number;
+  url: string;
+  element1: string; // Tên của element (ví dụ: title, meta_description, h1, v.v.)
+  currentValue: string; // Giá trị hiện tại của element
+  status: "good" | "warning" | "error" | "diffent"; // Trạng thái của element
+  important: number; // Mức độ quan trọng (từ 0 đến 100)
+}
 
 export default function OnPageOptimization() {
   const [url, setUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showResults, setShowResults] = useState(true); // Show mock results by default
-  const [activeTab, setActiveTab] = useState("elements");
-  const [expandedElement, setExpandedElement] = useState<string | null>(null);
-  const [optimizedText, setOptimizedText] = useState<Record<string, string>>({
-    title: pageElements[0].current,
-    meta_description: pageElements[1].current,
-    h1: pageElements[2].current
-  });
+  const [showResults, setShowResults] = useState(false); // Ban đầu ẩn kết quả
+
+  const [expandedElementId, setExpandedElementId] = useState<number | null>(null);
   
+  // State cho dữ liệu từ API
+  const [elements, setElements] = useState<Element[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // State cho phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [pageSize, setPageSize] = useState(10); // Mặc định 10 phần tử mỗi trang
+
+  // State cho Optimized Text (chỉ áp dụng cho các trường có thể chỉnh sửa như title, meta, h1)
+  const [optimizedText, setOptimizedText] = useState<Record<string, string>>({});
+  const [newElement, setNewElement] = useState({
+    url: "",
+    element1: "",
+    currentValue: "",
+    status: "good",
+    important: 50,
+  });
+
+  // --- API Functions ---
+  const fetchElements = async (page: number = 1, size: number = pageSize) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get(`/Elements/${page}/${size}`); // Sử dụng api.get
+      const data = res.data;
+
+      if (data && Array.isArray(data.items)) { // Kiểm tra data.items là mảng
+        setElements(data.items);
+        setCurrentPage(data.currentPage);
+        setTotalPages(data.totalPages);
+        setTotalItems(data.totalItems);
+
+        // Khởi tạo optimizedText với giá trị hiện tại từ API
+        const initialOptimizedText: Record<string, string> = {};
+        data.items.forEach((item: Element) => {
+          if (item.element1 === "title" || item.element1 === "meta_description" || item.element1 === "h1") {
+            initialOptimizedText[item.id.toString()] = item.currentValue;
+          }
+        });
+        setOptimizedText(initialOptimizedText);
+        setShowResults(true); // Hiển thị kết quả sau khi fetch thành công
+      } else {
+        console.error("API không trả về cấu trúc phân trang mong đợi hoặc items không phải mảng:", data);
+        setError("Invalid API response structure.");
+        setElements([]); // Đảm bảo elements là mảng rỗng nếu dữ liệu không hợp lệ
+      }
+    } catch (err: any) {
+      setError(`Failed to fetch elements: ${err.message || err.response?.data || err}`);
+      console.error("Lỗi khi gọi API Elements:", err);
+      setElements([]); // Đảm bảo elements là mảng rỗng khi có lỗi
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateElement = async (id: number, updatedData: Partial<Element>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.put(`/Elements/${id}`, updatedData); // Sử dụng api.put
+      await fetchElements(currentPage, pageSize); // Cập nhật lại danh sách elements
+    } catch (err: any) {
+      setError(`Failed to update element: ${err.message || err.response?.data || err}`);
+      console.error("Lỗi khi cập nhật element:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteElement = async (id: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.delete(`/Elements/${id}`); // Sử dụng api.delete
+      await fetchElements(currentPage, pageSize); // Cập nhật lại danh sách elements
+    } catch (err: any) {
+      setError(`Failed to delete element: ${err.message || err.response?.data || err}`);
+      console.error("Lỗi khi xóa element:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createElement = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.post("/Elements", newElement); // Sử dụng api.post
+      await fetchElements(currentPage, pageSize); // Cập nhật lại danh sách elements
+      setNewElement({ // Reset form
+        url: "",
+        element1: "",
+        currentValue: "",
+        status: "good",
+        important: 50,
+      });
+    } catch (err: any) {
+      setError(`Failed to create element: ${err.message || err.response?.data || err}`);
+      console.error("Lỗi khi tạo element:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Tải dữ liệu ban đầu khi component mount
+    fetchElements(currentPage, pageSize);
+  }, [currentPage, pageSize]); // Tải lại khi trang hoặc kích thước trang thay đổi
+
   const handleAnalyze = () => {
-    if (!url) return;
-    
+    // Đây là nơi bạn sẽ tích hợp API phân tích URL của riêng mình sau này.
+    // Hiện tại, nó chỉ đơn giản làm mới dữ liệu từ API Elements.
+    if (!url) {
+      alert("Vui lòng nhập URL để phân tích!");
+      return;
+    }
     setIsAnalyzing(true);
-    
-    // Simulate API call
+    // Simulate API call for analysis (replace with your actual analysis API call)
     setTimeout(() => {
+      fetchElements(1, pageSize); // Tải lại dữ liệu sau khi "phân tích"
       setIsAnalyzing(false);
-      setShowResults(true);
-    }, 2000);
+    }, 1000);
   };
   
+  const handleApplyChanges = async (elementId: number) => {
+    const updatedValue = optimizedText[elementId.toString()];
+    if (updatedValue) {
+      await updateElement(elementId, { currentValue: updatedValue });
+      // Đóng phần mở rộng sau khi cập nhật
+      setExpandedElementId(null);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "good":
         return <Check className="h-5 w-5 text-green-500" />;
       case "warning":
         return <AlertTriangle className="h-5 w-5 text-amber-500" />;
       case "error":
         return <Info className="h-5 w-5 text-red-500" />;
+      case "diffent": // Trạng thái "diffent" từ API của bạn
+        return <AlertTriangle className="h-5 w-5 text-orange-500" />;
       default:
         return null;
     }
   };
   
   const getElementIcon = (type: string) => {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case "title":
         return <FileText className="h-5 w-5" />;
       case "meta_description":
@@ -141,6 +215,7 @@ export default function OnPageOptimization() {
       case "h1":
         return <Heading1 className="h-5 w-5" />;
       case "h2_tags":
+      case "h2": // Nếu API trả về "h2"
         return <Heading2 className="h-5 w-5" />;
       case "images":
         return <Image className="h-5 w-5" />;
@@ -150,7 +225,7 @@ export default function OnPageOptimization() {
         return <Code className="h-5 w-5" />;
     }
   };
-  
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
@@ -162,7 +237,7 @@ export default function OnPageOptimization() {
       
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>Analyze Page</CardTitle>
+          <CardTitle>Analyze Website</CardTitle>
           <CardDescription>Enter a URL to analyze on-page elements</CardDescription>
         </CardHeader>
         <CardContent>
@@ -179,16 +254,11 @@ export default function OnPageOptimization() {
             <Button 
               className="flex items-center gap-2" 
               onClick={handleAnalyze}
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || loading}
             >
-              {isAnalyzing ? (
+              {isAnalyzing || loading ? (
                 <>
-                  <span className="animate-spin">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  </span>
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Analyzing...</span>
                 </>
               ) : (
@@ -204,198 +274,236 @@ export default function OnPageOptimization() {
       
       {showResults && (
         <div className="space-y-6">
-          <Tabs defaultValue="elements" className="space-y-4" onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-2 md:grid-cols-3">
-              <TabsTrigger value="elements">On-Page Elements</TabsTrigger>
-              <TabsTrigger value="content">Content Optimization</TabsTrigger>
-              <TabsTrigger value="preview">SERP Preview</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="elements" className="space-y-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>On-Page SEO Elements</CardTitle>
-                  <CardDescription>Analyze and optimize your page elements for better search visibility</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[180px]">Element</TableHead>
-                        <TableHead>Current Value</TableHead>
-                        <TableHead className="w-[100px] text-center">Status</TableHead>
-                        <TableHead className="w-[100px] text-center">Importance</TableHead>
-                        <TableHead className="w-[100px] text-center">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pageElements.map((element, index) => (
-                        <>
-                          <TableRow key={index} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <TableCell className="font-medium flex items-center gap-2">
-                              {getElementIcon(element.type)}
-                              <span>{element.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                            </TableCell>
-                            <TableCell className="max-w-[300px] truncate">{element.current}</TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex justify-center">
-                                {getStatusIcon(element.status)}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>On-Page SEO Elements</CardTitle>
+                <CardDescription>Analyze and optimize your page elements for better search visibility</CardDescription>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="flex items-center gap-1">
+                    <Plus className="h-4 w-4" />
+                    Add New Element
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Element</DialogTitle>
+                    <DialogDescription>
+                      Add a new on-page element to the analysis.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="new-url" className="text-right">
+                        URL
+                      </Label>
+                      <Input
+                        id="new-url"
+                        value={newElement.url}
+                        onChange={(e) => setNewElement({ ...newElement, url: e.target.value })}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="new-element-type" className="text-right">
+                        Element Type
+                      </Label>
+                      <Input
+                        id="new-element-type"
+                        value={newElement.element1}
+                        onChange={(e) => setNewElement({ ...newElement, element1: e.target.value })}
+                        className="col-span-3"
+                        placeholder="e.g., title, h1, image_alt"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="new-current-value" className="text-right">
+                        Current Value
+                      </Label>
+                      <Textarea
+                        id="new-current-value"
+                        value={newElement.currentValue}
+                        onChange={(e) => setNewElement({ ...newElement, currentValue: e.target.value })}
+                        className="col-span-3 min-h-[80px]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="new-status" className="text-right">
+                        Status
+                      </Label>
+                      <Select onValueChange={(value) => setNewElement({ ...newElement, status: value as "good" | "warning" | "error" | "diffent" })}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="good">Good</SelectItem>
+                          <SelectItem value="warning">Warning</SelectItem>
+                          <SelectItem value="error">Error</SelectItem>
+                          <SelectItem value="diffent">Different</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="new-importance" className="text-right">
+                        Importance
+                      </Label>
+                      <Input
+                        id="new-importance"
+                        type="number"
+                        value={newElement.important}
+                        onChange={(e) => setNewElement({ ...newElement, important: parseInt(e.target.value) || 0 })}
+                        className="col-span-3"
+                        min={0}
+                        max={100}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={createElement} disabled={loading}>
+                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Add Element
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {loading && <div className="text-center py-4"><Loader2 className="h-6 w-6 animate-spin mx-auto" /> Loading elements...</div>}
+              {error && <div className="text-center py-4 text-red-500">{error}</div>}
+              {!loading && !error && elements.length === 0 && (
+                <div className="text-center py-4 text-gray-500">No elements found. Try adding one!</div>
+              )}
+              {!loading && !error && elements.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[180px]">Element</TableHead>
+                      <TableHead>Current Value</TableHead>
+                      <TableHead className="w-[100px] text-center">Status</TableHead>
+                      <TableHead className="w-[100px] text-center">Importance</TableHead>
+                      <TableHead className="w-[120px] text-center">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {elements.map((element) => (
+                      <React.Fragment key={element.id}>
+                        <TableRow className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                          <TableCell className="font-medium flex items-center gap-2">
+                            {getElementIcon(element.element1)}
+                            <span>{element.element1.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                          </TableCell>
+                          <TableCell className="max-w-[300px] truncate">{element.currentValue}</TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex justify-center">
+                              {getStatusIcon(element.status)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center">
+                              <Progress
+                                value={element.important}
+                                className={`w-14 h-2 ${ // Áp dụng fix indicatorClassName ở đây
+                                  element.important > 80
+                                    ? "[&>*]:bg-blue-600"
+                                    : element.important > 60
+                                    ? "[&>*]:bg-green-500"
+                                    : "[&>*]:bg-amber-500"
+                                }`}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center flex items-center justify-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setExpandedElementId(expandedElementId === element.id ? null : element.id)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the 
+                                    <span className="font-bold"> {element.element1} </span> 
+                                    element and remove its data from our servers.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteElement(element.id)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                        {expandedElementId === element.id && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="bg-gray-50 dark:bg-gray-800 p-4">
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-medium mb-1">Recommendation:</h4>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    This element's status is "{element.status}". Consider optimizing its value.
+                                  </p>
+                                </div>
+                                
+                                {(element.element1 === "title" || element.element1 === "meta_description" || element.element1 === "h1") && (
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`optimized-${element.id}`}>Optimized Version:</Label>
+                                    <Textarea 
+                                      id={`optimized-${element.id}`} 
+                                      value={optimizedText[element.id.toString()] || element.currentValue}
+                                      onChange={(e) => setOptimizedText({...optimizedText, [element.id.toString()]: e.target.value})}
+                                      className="min-h-[80px]"
+                                    />
+                                    <div className="flex justify-end">
+                                      <Button size="sm" onClick={() => handleApplyChanges(element.id)} disabled={loading}>
+                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Apply Changes
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-center">
-                                <Progress 
-                                  value={element.importance} 
-                                  className="w-14 h-2"
-                                  indicatorClassName={
-                                    element.importance > 80 ? "bg-blue-600" : 
-                                    element.importance > 60 ? "bg-green-500" : "bg-amber-500"
-                                  }
-                                />
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => setExpandedElement(expandedElement === element.type ? null : element.type)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
                             </TableCell>
                           </TableRow>
-                          {expandedElement === element.type && (
-                            <TableRow>
-                              <TableCell colSpan={5} className="bg-gray-50 dark:bg-gray-800 p-4">
-                                <div className="space-y-4">
-                                  <div>
-                                    <h4 className="font-medium mb-1">Recommendation:</h4>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{element.recommendation}</p>
-                                  </div>
-                                  
-                                  {(element.type === "title" || element.type === "meta_description" || element.type === "h1") && (
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`optimized-${element.type}`}>Optimized Version:</Label>
-                                      <Textarea 
-                                        id={`optimized-${element.type}`} 
-                                        value={optimizedText[element.type]}
-                                        onChange={(e) => setOptimizedText({...optimizedText, [element.type]: e.target.value})}
-                                        className="min-h-[80px]"
-                                      />
-                                      <div className="flex justify-end">
-                                        <Button size="sm">Apply Changes</Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="content" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Content Optimization</CardTitle>
-                  <CardDescription>AI-powered suggestions to improve your content for better rankings</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Content Quality Score</h3>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700">72/100</Badge>
-                    </div>
-                    
-                    <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label>Comprehensiveness</Label>
-                          <span className="text-sm">68/100</span>
-                        </div>
-                        <Slider defaultValue={[68]} max={100} step={1} />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label>Readability</Label>
-                          <span className="text-sm">85/100</span>
-                        </div>
-                        <Slider defaultValue={[85]} max={100} step={1} />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label>Keyword Usage</Label>
-                          <span className="text-sm">76/100</span>
-                        </div>
-                        <Slider defaultValue={[76]} max={100} step={1} />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <Label>Structure</Label>
-                          <span className="text-sm">72/100</span>
-                        </div>
-                        <Slider defaultValue={[72]} max={100} step={1} />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-medium">Content Improvement Suggestions</h3>
-                    <div className="space-y-2">
-                      {contentSuggestions.map((suggestion, i) => (
-                        <div key={i} className="flex items-start gap-2 p-2 rounded bg-blue-50 dark:bg-blue-900/20">
-                          <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <p className="text-sm">{suggestion}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="border-t px-6 py-4">
-                  <Button className="ml-auto">Generate Optimized Content</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="preview" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>SERP Preview</CardTitle>
-                  <CardDescription>See how your page appears in search results</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-md p-4 space-y-1 max-w-2xl">
-                    <h3 className="text-xl text-blue-600 font-medium">{optimizedText.title || pageElements[0].current}</h3>
-                    <p className="text-green-700 text-sm">https://example.com/seo-strategies-for-2023</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{optimizedText.meta_description || pageElements[1].current}</p>
-                    
-                    <div className="mt-4 text-sm space-y-2">
-                      <p className="text-gray-500">Rating: ★★★★☆ (124 reviews)</p>
-                      <div className="text-xs text-gray-500 flex gap-2">
-                        <span>May 15, 2023</span>
-                        <span>•</span>
-                        <span>6 min read</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="border-t px-6 py-4 flex justify-between">
-                  <div className="text-sm text-gray-500">
-                    <span className="font-medium">Click-Through Rate Estimate:</span> 4.2% (Above average)
-                  </div>
-                  <Button variant="outline">Update Preview</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+              {/* Pagination Controls */}
+              {!loading && !error && elements.length > 0 && (
+                <div className="flex justify-between items-center mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1 || loading}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Page {currentPage} of {totalPages} ({totalItems} items)
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages || loading}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

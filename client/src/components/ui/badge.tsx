@@ -1,3 +1,5 @@
+// File: src/components/ui/badge.tsx
+
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -15,6 +17,9 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // SỬA Ở ĐÂY: Thêm một variant mới cho "warning"
+        warning:
+          "border-transparent bg-amber-500 text-primary-foreground hover:bg-amber-500/80",
       },
     },
     defaultVariants: {
