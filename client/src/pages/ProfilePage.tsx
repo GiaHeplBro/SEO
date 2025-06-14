@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
@@ -72,9 +72,26 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const userId = useMemo(() => {
+    const storedTokens = localStorage.getItem('tokens');
+    if (!storedTokens) return null;
+    try {
+      const { accessToken } = JSON.parse(storedTokens);
+      const decodedToken: { user_ID: string } = jwtDecode(accessToken);
+      return decodedToken.user_ID;
+    } catch (e) {
+      console.error("Failed to decode token", e);
+      return null;
+    }
+  }, []);
+
+
   const { data: user, isLoading, isError, error } = useQuery({
-    queryKey: ['currentUser'],
+    // Query key giờ đã chứa userId, nó sẽ là duy nhất cho mỗi người dùng
+    queryKey: ['currentUser', userId],
     queryFn: fetchCurrentUser,
+    // Rất quan trọng: Chỉ chạy query này khi `userId` có giá trị
+    enabled: !!userId,
   });
 
   useEffect(() => {
@@ -103,8 +120,9 @@ export default function ProfilePage() {
   };
 
   if (isLoading) return <div className="p-8">Đang tải thông tin cá nhân...</div>;
-  if (isError) return <div className="p-8 text-red-500">Lỗi: {error.message}</div>;
-
+  if (!userId || isError) {
+    return <div className="p-8 text-red-500">Lỗi: Không thể tải thông tin người dùng. Vui lòng đăng nhập lại. {error?.message}</div>;
+  }
   // SỬA Ở ĐÂY 3: Luôn sử dụng biến displayName để đảm bảo hiển thị nhất quán
   const displayName = user?.fullName || user?.fullname || "Chưa có tên";
   const displayAvatarFallback = displayName.split(' ').map(n => n[0]).join('').toUpperCase() || '??';
@@ -153,7 +171,7 @@ export default function ProfilePage() {
               <span className="font-medium">Type:</span>
               <span className="ml-auto text-muted-foreground">{user?.accountType}</span>
             </div>
-             <div className="flex items-center">
+            <div className="flex items-center">
               <Mail className="w-5 h-5 mr-3 text-muted-foreground" />
               <span className="font-medium">Role:</span>
               <span className="ml-auto text-muted-foreground">{user?.role}</span>
