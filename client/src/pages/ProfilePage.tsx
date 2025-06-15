@@ -4,21 +4,20 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import { User, Mail, Calendar, Crown, ShieldCheck, Edit, X, Check } from 'lucide-react';
 
-// Import các component UI
+// Import UI components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-// SỬA Ở ĐÂY 1: Đường dẫn import useToast chuẩn của shadcn/ui
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast"; // Đường dẫn chuẩn của shadcn/ui
 
-// --- Interface và axios instance ---
+// --- Interface ---
 interface UserProfile {
-  id: number; // API trả về user có id, nên ta bỏ optional
-  user_ID?: string;
-  fullName: string; // Tương tự, fullName luôn có
-  fullname?: string;
+  id: number;
+  user_ID?: string; // Từ token
+  fullName: string;
+  fullname?: string; // Từ token
   email: string;
   role: string;
   avatar: string;
@@ -30,39 +29,36 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
 });
 
-// --- Hàm fetch và update ---
-const fetchCurrentUser = async (): Promise<UserProfile> => {
+// --- Hàm fetch user theo ID ---
+const fetchCurrentUser = async (userId: string | null): Promise<UserProfile> => {
+  if (!userId) throw new Error("User ID không hợp lệ.");
+  
   const storedTokens = localStorage.getItem('tokens');
   if (!storedTokens) throw new Error("Không tìm thấy token xác thực.");
   const { accessToken } = JSON.parse(storedTokens);
   if (!accessToken) throw new Error("Access token không hợp lệ.");
-  const decodedToken: { user_ID: string } = jwtDecode(accessToken);
-  const userId = decodedToken.user_ID;
-  if (!userId) throw new Error("Không tìm thấy User ID trong token.");
 
   const response = await api.get(`/Users/${userId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+  
+  // API đã trả về đúng một object, nên ta trả về thẳng response.data
   return response.data;
 };
 
-// Hàm mới để cập nhật thông tin user
+// --- Hàm update user ---
 const updateCurrentUser = async (updatedData: { fullName: string }): Promise<UserProfile> => {
-  const storedTokens = localStorage.getItem('tokens');
-  if (!storedTokens) throw new Error("Không tìm thấy token xác thực.");
-  const { accessToken } = JSON.parse(storedTokens);
-  if (!accessToken) throw new Error("Access token không hợp lệ.");
+    const storedTokens = localStorage.getItem('tokens');
+    if (!storedTokens) throw new Error("Không tìm thấy token xác thực.");
+    const { accessToken } = JSON.parse(storedTokens);
+    const decodedToken: { user_ID: string } = jwtDecode(accessToken);
+    const userId = decodedToken.user_ID;
+    if (!userId) throw new Error("Không tìm thấy User ID trong token để cập nhật.");
 
-  // SỬA Ở ĐÂY 2: API cập nhật cần ID của user. Ta cũng lấy nó từ token.
-  const decodedToken: { user_ID: string } = jwtDecode(accessToken);
-  const userId = decodedToken.user_ID;
-  if (!userId) throw new Error("Không tìm thấy User ID trong token để cập nhật.");
-
-  // Dựa trên Swagger, API PUT có thể cần ID trong URL, ví dụ: /Users/2
-  const response = await api.put(`/Users/${userId}`, updatedData, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  return response.data;
+    const response = await api.put(`/Users/${userId}`, updatedData, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data;
 };
 
 // --- Component trang Profile ---
@@ -85,13 +81,12 @@ export default function ProfilePage() {
     }
   }, []);
 
-
   const { data: user, isLoading, isError, error } = useQuery({
-    // Query key giờ đã chứa userId, nó sẽ là duy nhất cho mỗi người dùng
-    queryKey: ['currentUser', userId],
-    queryFn: fetchCurrentUser,
-    // Rất quan trọng: Chỉ chạy query này khi `userId` có giá trị
-    enabled: !!userId,
+    // Query key động, duy nhất cho mỗi user
+    queryKey: ['currentUser', userId], 
+    queryFn: () => fetchCurrentUser(userId),
+    // Chỉ chạy khi có userId
+    enabled: !!userId, 
   });
 
   useEffect(() => {
@@ -104,8 +99,8 @@ export default function ProfilePage() {
     mutationFn: updateCurrentUser,
     onSuccess: (data) => {
       toast({ title: "Thành công", description: "Hồ sơ của bạn đã được cập nhật." });
-      // Cập nhật cache với dữ liệu mới nhất từ response của mutation
-      queryClient.setQueryData(['currentUser'], data);
+      // Cập nhật cache với đúng queryKey động
+      queryClient.setQueryData(['currentUser', userId], data);
       setIsEditing(false);
     },
     onError: (err) => {
@@ -121,9 +116,9 @@ export default function ProfilePage() {
 
   if (isLoading) return <div className="p-8">Đang tải thông tin cá nhân...</div>;
   if (!userId || isError) {
-    return <div className="p-8 text-red-500">Lỗi: Không thể tải thông tin người dùng. Vui lòng đăng nhập lại. {error?.message}</div>;
+    return <div className="p-8 text-red-500">Lỗi: Không thể tải thông tin người dùng. Vui lòng đăng nhập lại.</div>;
   }
-  // SỬA Ở ĐÂY 3: Luôn sử dụng biến displayName để đảm bảo hiển thị nhất quán
+  
   const displayName = user?.fullName || user?.fullname || "Chưa có tên";
   const displayAvatarFallback = displayName.split(' ').map(n => n[0]).join('').toUpperCase() || '??';
 
@@ -167,16 +162,15 @@ export default function ProfilePage() {
               <span className="ml-auto text-muted-foreground">{user?.email}</span>
             </div>
             <div className="flex items-center">
-              <Mail className="w-5 h-5 mr-3 text-muted-foreground" />
+              <Crown className="w-5 h-5 mr-3 text-muted-foreground" />
               <span className="font-medium">Type:</span>
               <span className="ml-auto text-muted-foreground">{user?.accountType}</span>
             </div>
-            <div className="flex items-center">
-              <Mail className="w-5 h-5 mr-3 text-muted-foreground" />
-              <span className="font-medium">Role:</span>
-              <span className="ml-auto text-muted-foreground">{user?.role}</span>
-            </div>
-
+             <div className="flex items-center">
+               <ShieldCheck className="w-5 h-5 mr-3 text-muted-foreground" />
+               <span className="font-medium">Role:</span>
+               <span className="ml-auto text-muted-foreground">{user?.role}</span>
+             </div>
             <div className="flex items-center">
               <Calendar className="w-5 h-5 mr-3 text-muted-foreground" />
               <span className="font-medium">Ngày tham gia:</span>

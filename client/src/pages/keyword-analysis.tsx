@@ -256,7 +256,7 @@ const fetchRankTrackings = async () => {
                     <TableRow>
                       <TableHead>Keyword</TableHead>
                       <TableHead className="text-center">Rank</TableHead>
-                      <TableHead className="text-center">User ID</TableHead>
+                      {/* <TableHead className="text-center">User ID</TableHead> */}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -264,7 +264,7 @@ const fetchRankTrackings = async () => {
                       <TableRow key={item.id}>
                         <TableCell>{item.keyword}</TableCell>
                         <TableCell className="text-center">{item.rank}</TableCell>
-                        <TableCell className="text-center">{item.userId}</TableCell>
+                        {/* <TableCell className="text-center">{item.userId}</TableCell> */}
                       </TableRow>
                     ))}
                   </TableBody>

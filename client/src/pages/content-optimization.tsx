@@ -40,6 +40,8 @@ interface ContentOptimizationPayload {
 // --- Khai báo hằng số bên ngoài component ---
 const READABILITY_LEVELS = ["Easy", "Medium", "Hard", "Advanced", "Expert"];
 
+const CONTENT_LENGTH_LEVELS = ["Short", "Medium", "Long", "Comprehensive", "In-depth"];
+
 // --- Khởi tạo axios instance ---
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -65,7 +67,7 @@ const fetchOptimizationHistory = async (): Promise<ContentOptimizationData[]> =>
   const response = await api.get('/ContentOptimizations', {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
-return response.data.sort((a: ContentOptimizationData, b: ContentOptimizationData) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return response.data.sort((a: ContentOptimizationData, b: ContentOptimizationData) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
 
@@ -75,6 +77,7 @@ export default function ContentOptimization() {
   const [targetKeyword, setTargetKeyword] = useState("");
   const [optimizationLevel, setOptimizationLevel] = useState<number[]>([3]); // Level từ 1-5
   const [readabilityPreference, setReadabilityPreference] = useState<number[]>([2]); // Mặc định là "Medium"
+  const [contentLengthPreference, setContentLengthPreference] = useState<number[]>([2]); // Mặc định là "Medium"
   const [useCitations, setUseCitations] = useState(true);
   const [selectedOptimization, setSelectedOptimization] = useState<ContentOptimizationData | null>(null);
 
@@ -101,7 +104,7 @@ export default function ContentOptimization() {
   // --- Hàm xử lý khi nhấn nút Optimize ---
   const handleOptimize = () => {
     if (!content || !targetKeyword) return;
-    
+
     // Lấy userId từ token
     const storedTokens = localStorage.getItem('tokens');
     if (!storedTokens) {
@@ -125,9 +128,9 @@ export default function ContentOptimization() {
       optimizationLevel: optimizationLevel[0],
       readabilityLevel: READABILITY_LEVELS[readabilityPreference[0] - 1],
       includeCitation: useCitations,
-      contentLenght: `${content.length} characters`,
+      contentLenght: CONTENT_LENGTH_LEVELS[contentLengthPreference[0] - 1],
     };
-    
+
     console.log("Gửi payload đã sửa cho Backend:", payload);
     mutation.mutate(payload);
   };
@@ -145,56 +148,71 @@ export default function ContentOptimization() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Content Input</CardTitle>
-                <CardDescription>Enter your content to optimize for SEO and readability</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                   <div className="space-y-2">
-                     <Label htmlFor="target-keyword">Target Keyword or Topic</Label>
-                     <div className="relative">
-                       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                       <Input id="target-keyword" placeholder="e.g., content optimization techniques" value={targetKeyword} onChange={(e) => setTargetKeyword(e.target.value)} className="pl-9" />
+          <Card>
+            <CardHeader>
+              <CardTitle>Content Input</CardTitle>
+              <CardDescription>Enter your content to optimize for SEO and readability</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="target-keyword">Target Keyword or Topic</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input id="target-keyword" placeholder="e.g., content optimization techniques" value={targetKeyword} onChange={(e) => setTargetKeyword(e.target.value)} className="pl-9" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="content">Your Content</Label>
+                  <span className="text-xs text-muted-foreground">{content.length} characters</span>
+                </div>
+                <Textarea id="content" placeholder="Paste your content here..." value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[200px]" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Optimization Settings</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
+            <div className="space-y-3">
+                     <div className="flex justify-between items-center">
+                        <Label>Content Length</Label>
+                        <span className="text-sm font-medium">
+                          {CONTENT_LENGTH_LEVELS[contentLengthPreference[0] - 1]}
+                        </span>
                      </div>
-                   </div>
-                   <div className="space-y-2">
-                     <div className="flex justify-between">
-                       <Label htmlFor="content">Your Content</Label>
-                       <span className="text-xs text-muted-foreground">{content.length} characters</span>
-                     </div>
-                     <Textarea id="content" placeholder="Paste your content here..." value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[200px]" />
-                   </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader><CardTitle>Optimization Settings</CardTitle></CardHeader>
-              <CardContent className="space-y-6">
-                  <div className="space-y-3">
-                     <div className="flex justify-between items-center"><Label>Optimization Level</Label><span className="text-sm font-medium">Level {optimizationLevel[0]}</span></div>
-                     <Slider min={1} max={5} step={1} value={optimizationLevel} onValueChange={setOptimizationLevel} />
+                     <Slider 
+                        min={1} 
+                        max={CONTENT_LENGTH_LEVELS.length} 
+                        step={1} 
+                        value={contentLengthPreference} 
+                        onValueChange={setContentLengthPreference} 
+                     />
                   </div>
-                  <div className="space-y-3">
-                      <div className="flex justify-between items-center"><Label>Readability Level</Label><span className="text-sm font-medium">{READABILITY_LEVELS[readabilityPreference[0] - 1]}</span></div>
-                      <Slider min={1} max={READABILITY_LEVELS.length} step={1} value={readabilityPreference} onValueChange={setReadabilityPreference} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                      <div className="space-y-0.5"><Label>Include Citations</Label><p className="text-sm text-muted-foreground">Add high-quality citations to support claims</p></div>
-                      <Switch checked={useCitations} onCheckedChange={setUseCitations} />
-                  </div>
-              </CardContent>
-              <CardFooter className="border-t px-6 py-4">
-                <Button className="ml-auto flex items-center gap-2" onClick={handleOptimize} disabled={mutation.isPending || !content || !targetKeyword}>
-                  {mutation.isPending ? "Optimizing..." : <><Wand2 className="h-4 w-4" /><span>Optimize with AI</span></>}
-                </Button>
-              </CardFooter>
-            </Card>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center"><Label>Optimization Level</Label><span className="text-sm font-medium">Level {optimizationLevel[0]}</span></div>
+                <Slider min={1} max={5} step={1} value={optimizationLevel} onValueChange={setOptimizationLevel} />
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center"><Label>Readability Level</Label><span className="text-sm font-medium">{READABILITY_LEVELS[readabilityPreference[0] - 1]}</span></div>
+                <Slider min={1} max={READABILITY_LEVELS.length} step={1} value={readabilityPreference} onValueChange={setReadabilityPreference} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5"><Label>Include Citations</Label><p className="text-sm text-muted-foreground">Add high-quality citations to support claims</p></div>
+                <Switch checked={useCitations} onCheckedChange={setUseCitations} />
+              </div>
+            </CardContent>
+            <CardFooter className="border-t px-6 py-4">
+              <Button className="ml-auto flex items-center gap-2" onClick={handleOptimize} disabled={mutation.isPending || !content || !targetKeyword}>
+                {mutation.isPending ? "Optimizing..." : <><Wand2 className="h-4 w-4" /><span>Optimize with AI</span></>}
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
 
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center"><History className="mr-2 h-5 w-5"/> Optimization History</CardTitle>
+              <CardTitle className="flex items-center"><History className="mr-2 h-5 w-5" /> Optimization History</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingHistory ? <p>Loading history...</p> : (
@@ -216,29 +234,29 @@ export default function ContentOptimization() {
 
       {selectedOptimization && (
         <Card className="mt-6">
-            <CardHeader>
-                <CardTitle>Optimization Result</CardTitle>
-                <CardDescription>Result for "{selectedOptimization.keyword}"</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label>Optimized Content</Label>
-                  <pre className="mt-2 border rounded-md p-4 bg-gray-50 dark:bg-gray-800 whitespace-pre-wrap font-sans text-sm min-h-[400px]">
-                      {selectedOptimization.optimizedContent}
-                  </pre>
-                </div>
-                <div className="space-y-4">
-                    <Label>Content Scores</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                        <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.seoscore}</p><p className="text-sm text-muted-foreground">SEO Score</p></Card>
-                        <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.readability}</p><p className="text-sm text-muted-foreground">Readability</p></Card>
-                        <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.engagement}</p><p className="text-sm text-muted-foreground">Engagement</p></Card>
-                        <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.originality}</p><p className="text-sm text-muted-foreground">Originality</p></Card>
-                    </div>
+          <CardHeader>
+            <CardTitle>Optimization Result</CardTitle>
+            <CardDescription>Result for "{selectedOptimization.keyword}"</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label>Optimized Content</Label>
+                <pre className="mt-2 border rounded-md p-4 bg-gray-50 dark:bg-gray-800 whitespace-pre-wrap font-sans text-sm min-h-[400px]">
+                  {selectedOptimization.optimizedContent}
+                </pre>
+              </div>
+              <div className="space-y-4">
+                <Label>Content Scores</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.seoscore}</p><p className="text-sm text-muted-foreground">SEO Score</p></Card>
+                  <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.readability}</p><p className="text-sm text-muted-foreground">Readability</p></Card>
+                  <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.engagement}</p><p className="text-sm text-muted-foreground">Engagement</p></Card>
+                  <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.originality}</p><p className="text-sm text-muted-foreground">Originality</p></Card>
                 </div>
               </div>
-            </CardContent>
+            </div>
+          </CardContent>
         </Card>
       )}
     </div>

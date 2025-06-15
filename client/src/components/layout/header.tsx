@@ -1,6 +1,6 @@
 import { useState } from "react";
 // SỬA Ở ĐÂY 1: Thêm "User as UserIcon" để tránh trùng tên và "LogOut"
-import { Bell, Search, Sparkles, Globe, Zap, User as UserIcon, LogOut } from "lucide-react"; 
+import { Bell, Search, Sparkles, Globe, Zap, User as UserIcon, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -15,22 +15,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+
+
 // --- Các hằng số và interface giữ nguyên ---
 const pathToTitle: Record<string, string> = {
   "/": "Dashboard",
   "/keyword-analysis": "Keyword Analysis",
   "/seo-audit": "SEO Audit",
   "/on-page-optimization": "On-Page Optimization",
-  "/backlink-analysis": "Backlink Analysis",
   "/content-optimization": "Content Optimization",
-  "/settings": "Settings",
-  "/profile": "Hồ sơ của tôi", // Thêm tiêu đề cho trang profile
+  "/profile": "Hồ sơ của tôi",
+  "/pricing": "Upgrade Plan", // Thêm dòng này
 };
 
 const pathToDescription: Record<string, string> = {
   "/": "Overview of your SEO performance and recent optimizations",
   "/profile": "Xem và chỉnh sửa thông tin cá nhân của bạn",
-  // ... các description khác
+  "/pricing": "Choose a plan that fits your needs", // Thêm dòng này
 };
 
 interface UserProfile {
@@ -71,27 +72,22 @@ export default function Header({ onLogout, user }: HeaderProps) {
             {pathToDescription[location] || ""}
           </p>
         </div>
-        
+
         {/* Phần còn lại của header không đổi */}
         <div className="flex items-center md:hidden">
           <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
             SEOBoostAI
           </h1>
         </div>
-        
+
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="hidden md:flex items-center gap-2 border-blue-200 text-blue-600 hover:bg-blue-50">
-            <Globe className="h-4 w-4" />
-            <span>New Analysis</span>
-          </Button>
-          <div className="relative mr-2 hidden md:block">
-            <Input 
-              type="text" 
-              placeholder="Enter a URL to analyze..." 
-              className="bg-gray-50 dark:bg-gray-800 rounded-full pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-sm w-64" 
-            />
-            <Search className="absolute left-3 top-2.5 text-gray-400 h-4 w-4" />
-          </div>
+          <Link href="/pricing">
+            <Button size="sm" className="hidden md:flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Zap className="h-4 w-4" />
+              <span>Upgrade</span>
+            </Button>
+          </Link>
+          
           <div className="relative">
             <button className="relative p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none">
               <Bell className="h-5 w-5" />
@@ -102,7 +98,7 @@ export default function Header({ onLogout, user }: HeaderProps) {
               )}
             </button>
           </div>
-          
+
           {/* SỬA Ở ĐÂY 3: Cập nhật nội dung của DropdownMenu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -123,7 +119,7 @@ export default function Header({ onLogout, user }: HeaderProps) {
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              
+
               {/* === PHẦN THÊM VÀO ĐÂY === */}
               <Link href="/profile">
                 <DropdownMenuItem className="cursor-pointer">
