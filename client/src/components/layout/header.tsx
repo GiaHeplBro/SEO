@@ -65,7 +65,7 @@ export default function Header({ onLogout, user }: HeaderProps) {
         {/* Phần tiêu đề không đổi */}
         <div className="md:flex md:flex-col md:gap-1 hidden">
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-            {pathToTitle[location] || "Not Found"}
+            {pathToTitle[location] || "Dashboard"}
             {location === '/content-optimization' && <Sparkles className="ml-2 h-5 w-5 text-yellow-500" />}
           </h2>
           <p className="text-gray-500 dark:text-gray-400">
@@ -87,7 +87,7 @@ export default function Header({ onLogout, user }: HeaderProps) {
               <span>Upgrade</span>
             </Button>
           </Link>
-          
+
           <div className="relative">
             <button className="relative p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none">
               <Bell className="h-5 w-5" />
