@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useToast } from "@/hooks/use-toast"; // Sửa lại đường dẫn import
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 // --- Định nghĩa các kiểu dữ liệu ---
 interface ContentOptimizationData {
@@ -59,15 +60,31 @@ const createOptimization = async (payload: ContentOptimizationPayload): Promise<
   return response.data;
 };
 
-const fetchOptimizationHistory = async (): Promise<ContentOptimizationData[]> => {
+const fetchOptimizationHistory = async (userId: string | null): Promise<ContentOptimizationData[]> => {
+  if (!userId) return [];
   const storedTokens = localStorage.getItem('tokens');
   if (!storedTokens) throw new Error("Không tìm thấy token xác thực.");
   const { accessToken } = JSON.parse(storedTokens);
 
-  const response = await api.get('/ContentOptimizations', {
+  const response = await api.get(`/ContentOptimizations/user/${userId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
-  return response.data.sort((a: ContentOptimizationData, b: ContentOptimizationData) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return Array.isArray(response.data) ? response.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
+};
+
+const ScoreCard = ({ title, score }: { title: string; score: number | null }) => {
+  const getScoreColor = (s: number | null) => {
+    if (s === null) return 'text-gray-500';
+    if (s <= 50) return 'text-red-500';
+    if (s <= 80) return 'text-amber-500';
+    return 'text-green-500';
+  };
+  return (
+    <Card className="text-center p-4">
+      <p className={`text-2xl font-bold ${getScoreColor(score)}`}>{score ?? 'N/A'}</p>
+      <p className="text-sm text-muted-foreground">{title}</p>
+    </Card>
+  );
 };
 
 
@@ -84,17 +101,28 @@ export default function ContentOptimization() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+
+  const userId = useMemo(() => {
+    const storedTokens = localStorage.getItem('tokens');
+    if (!storedTokens) return null;
+    try {
+      const { accessToken } = JSON.parse(storedTokens);
+      const decodedToken: { user_ID: string } = jwtDecode(accessToken);
+      return decodedToken.user_ID;
+    } catch (e) { return null; }
+  }, []);
+
   const { data: history, isLoading: isLoadingHistory } = useQuery({
-    queryKey: ['optimizationHistory'],
-    queryFn: fetchOptimizationHistory,
+    queryKey: ['optimizationHistory', userId],
+    queryFn: () => fetchOptimizationHistory(userId),
+    enabled: !!userId,
   });
 
   const mutation = useMutation({
     mutationFn: createOptimization,
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({ title: "Thành công!", description: "Nội dung của bạn đã được tối ưu hóa." });
-      setSelectedOptimization(data);
-      queryClient.invalidateQueries({ queryKey: ['optimizationHistory'] });
+      queryClient.invalidateQueries({ queryKey: ['optimizationHistory', userId] });
     },
     onError: (error) => {
       toast({ title: "Thất bại", description: error.message, variant: "destructive" });
@@ -127,8 +155,9 @@ export default function ContentOptimization() {
       originalContent: content,
       optimizationLevel: optimizationLevel[0],
       readabilityLevel: READABILITY_LEVELS[readabilityPreference[0] - 1],
-      includeCitation: useCitations,
+      includeCitation: false, // SỬA Ở ĐÂY 4: Mặc định là false      
       contentLenght: CONTENT_LENGTH_LEVELS[contentLengthPreference[0] - 1],
+
     };
 
     console.log("Gửi payload đã sửa cho Backend:", payload);
@@ -173,21 +202,21 @@ export default function ContentOptimization() {
           <Card>
             <CardHeader><CardTitle>Optimization Settings</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-            <div className="space-y-3">
-                     <div className="flex justify-between items-center">
-                        <Label>Content Length</Label>
-                        <span className="text-sm font-medium">
-                          {CONTENT_LENGTH_LEVELS[contentLengthPreference[0] - 1]}
-                        </span>
-                     </div>
-                     <Slider 
-                        min={1} 
-                        max={CONTENT_LENGTH_LEVELS.length} 
-                        step={1} 
-                        value={contentLengthPreference} 
-                        onValueChange={setContentLengthPreference} 
-                     />
-                  </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label>Content Length</Label>
+                  <span className="text-sm font-medium">
+                    {CONTENT_LENGTH_LEVELS[contentLengthPreference[0] - 1]}
+                  </span>
+                </div>
+                <Slider
+                  min={1}
+                  max={CONTENT_LENGTH_LEVELS.length}
+                  step={1}
+                  value={contentLengthPreference}
+                  onValueChange={setContentLengthPreference}
+                />
+              </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-center"><Label>Optimization Level</Label><span className="text-sm font-medium">Level {optimizationLevel[0]}</span></div>
                 <Slider min={1} max={5} step={1} value={optimizationLevel} onValueChange={setOptimizationLevel} />
@@ -195,10 +224,6 @@ export default function ContentOptimization() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center"><Label>Readability Level</Label><span className="text-sm font-medium">{READABILITY_LEVELS[readabilityPreference[0] - 1]}</span></div>
                 <Slider min={1} max={READABILITY_LEVELS.length} step={1} value={readabilityPreference} onValueChange={setReadabilityPreference} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5"><Label>Include Citations</Label><p className="text-sm text-muted-foreground">Add high-quality citations to support claims</p></div>
-                <Switch checked={useCitations} onCheckedChange={setUseCitations} />
               </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
@@ -214,51 +239,52 @@ export default function ContentOptimization() {
             <CardHeader>
               <CardTitle className="flex items-center"><History className="mr-2 h-5 w-5" /> Optimization History</CardTitle>
             </CardHeader>
-            <CardContent>
-              {isLoadingHistory ? <p>Loading history...</p> : (
-                <ul className="space-y-2">
-                  {history?.map(item => (
-                    <li key={item.id}>
-                      <button onClick={() => setSelectedOptimization(item)} className="w-full text-left p-2 rounded-md hover:bg-accent">
-                        <p className="font-semibold truncate">{item.keyword}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString('vi-VN')}</p>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <CardContent className="max-h-[600px] overflow-y-auto">
+              {isLoadingHistory ? <p>Loading history...</p> :
+                history && history.length > 0 ? (
+                  <Accordion type="single" collapsible className="w-full">
+                    {history.map(item => (
+                      <AccordionItem value={`item-${item.id}`} key={item.id}>
+                        <AccordionTrigger>
+                          <div className="text-left">
+                            <p className="font-semibold truncate">{item.keyword}</p>
+                            <p className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString('vi-VN')}</p>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          {/* Nội dung chi tiết của kết quả */}
+                          <div className="space-y-4 p-2">
+                            <div>
+                              <Label className="text-xs font-semibold">Optimized Content</Label>
+                              <pre className="mt-1 border rounded-md p-2 bg-gray-50 dark:bg-gray-800 whitespace-pre-wrap font-sans text-xs max-h-40 overflow-y-auto">
+                                {item.optimizedContent ?? "Not available."}
+                              </pre>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs font-semibold">Content Scores</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <ScoreCard title="SEO Score" score={item.seoscore} />
+                                <ScoreCard title="Readability" score={item.readability} />
+                                <ScoreCard title="Engagement" score={item.engagement} />
+                                <ScoreCard title="Originality" score={item.originality} />
+                              </div>
+                            </div>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No history found.</p>
+                )
+              }
             </CardContent>
           </Card>
         </div>
+
       </div>
 
-      {selectedOptimization && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Optimization Result</CardTitle>
-            <CardDescription>Result for "{selectedOptimization.keyword}"</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label>Optimized Content</Label>
-                <pre className="mt-2 border rounded-md p-4 bg-gray-50 dark:bg-gray-800 whitespace-pre-wrap font-sans text-sm min-h-[400px]">
-                  {selectedOptimization.optimizedContent}
-                </pre>
-              </div>
-              <div className="space-y-4">
-                <Label>Content Scores</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.seoscore}</p><p className="text-sm text-muted-foreground">SEO Score</p></Card>
-                  <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.readability}</p><p className="text-sm text-muted-foreground">Readability</p></Card>
-                  <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.engagement}</p><p className="text-sm text-muted-foreground">Engagement</p></Card>
-                  <Card className="text-center p-4"><p className="text-2xl font-bold">{selectedOptimization.originality}</p><p className="text-sm text-muted-foreground">Originality</p></Card>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
     </div>
   );
 }

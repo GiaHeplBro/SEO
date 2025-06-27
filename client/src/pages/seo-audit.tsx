@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import CircularProgress from "@/components/ui/GradientCircularProgress"; // Sửa lại tên import
 import GradientCircularProgress from "@/components/ui/GradientCircularProgress"; // 1. Import component mới
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -33,8 +34,9 @@ const analyzeUrlApi = async ({ userId, url }: { userId: string, url: string }): 
 
 
 
-const fetchAuditHistory = async (): Promise<AuditReport[]> => {
-  const { data } = await api.get('/AuditReports');
+const fetchAuditHistory = async (userId: string | null): Promise<AuditReport[]> => {
+  if (!userId) return []; // Nếu không có userId, trả về mảng rỗng
+  const { data } = await api.get(`/AuditReports/user/${userId}`);
   return data.sort((a: AuditReport, b: AuditReport) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
@@ -56,10 +58,33 @@ export default function SeoAudit() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const userId = useMemo(() => {
+    const storedTokens = localStorage.getItem('tokens');
+    if (!storedTokens) return null;
+    try {
+      const { accessToken } = JSON.parse(storedTokens);
+      const decodedToken: { user_ID: string } = jwtDecode(accessToken);
+      return decodedToken.user_ID;
+    } catch (e) {
+      console.error("Failed to decode token", e);
+      return null;
+    }
+  }, []);
+
+  // SỬA Ở ĐÂY 3: Cập nhật useQuery cho history
   const { data: history, isLoading: isLoadingHistory } = useQuery({
-    queryKey: ['auditHistory'],
-    queryFn: fetchAuditHistory
+    queryKey: ['auditHistory', userId], // Thêm userId vào queryKey
+    queryFn: () => fetchAuditHistory(userId), // Truyền userId vào hàm fetch
+    enabled: !!userId, // Chỉ chạy khi đã có userId
   });
+
+
+  const getScoreColor = (score: number) => {
+    if (score <= 60) return "#ef4444"; // Màu đỏ (red-500)
+    if (score <= 80) return "#f59e0b"; // Màu vàng (amber-500)
+    return "#22c55e"; // Màu xanh lá (green-500)
+  };
+
 
   const mutation = useMutation({
     mutationFn: analyzeUrlApi,
@@ -67,7 +92,8 @@ export default function SeoAudit() {
       toast({ title: "Phân tích hoàn tất!", description: `Đã có kết quả cho ${newReport.url}` });
       setSelectedReport(newReport);
       // Làm mới lại danh sách lịch sử để nó hiển thị kết quả mới nhất
-      queryClient.invalidateQueries({ queryKey: ['auditHistory'] });
+
+      queryClient.invalidateQueries({ queryKey: ['auditHistory', userId] });
     },
     onError: (error) => {
       toast({ title: "Thất bại", description: error.message, variant: 'destructive' });
@@ -187,8 +213,13 @@ export default function SeoAudit() {
                 <CardContent className="pt-2">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                     <div className="flex justify-center md:justify-start">
-                      <GradientCircularProgress progress={selectedReport.overallScore} />
-                    </div>
+
+<CircularProgress
+                      progress={selectedReport.overallScore}
+                      color={getScoreColor(selectedReport.overallScore)}
+                    />
+                  </div>
+
                     <div className="grid grid-cols-2 gap-3 md:col-span-3">
                       <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-red-100 rounded-full p-2"><XCircle className="h-5 w-5 text-red-600" /></div><div><p className="text-sm text-muted-foreground">Critical Issues</p><p className="text-xl font-bold">{selectedReport.criticalIssue}</p></div></CardContent></Card>
                       <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-amber-100 rounded-full p-2"><AlertCircle className="h-5 w-5 text-amber-600" /></div><div><p className="text-sm text-muted-foreground">Warnings</p><p className="text-xl font-bold">{selectedReport.warning}</p></div></CardContent></Card>
