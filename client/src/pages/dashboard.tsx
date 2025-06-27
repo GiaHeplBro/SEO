@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery } from '@tanstack/react-query'; // Thêm import
+import axios from 'axios'; // Import axios
 import api from '@/axiosInstance'; // Thêm import
+
 import {
   BarChart,
   TrendingUp,
@@ -34,6 +36,11 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 
+interface TopRankingKeyword {
+  keyword_name: string;
+  rank: number;
+  search_volume: number;
+}
 
 interface KeywordData {
   id: number;
@@ -49,6 +56,12 @@ const fetchKeywords = async (): Promise<KeywordData[]> => {
   // Giả định API của trang Keyword Analysis là /Keywords
   const { data } = await api.get('/Keywords'); 
   return data;
+};
+
+const fetchTopRankings = async (): Promise<TopRankingKeyword[]> => {
+  const response = await axios.post('https://seo-flask-api.azurewebsites.net/top-ranking');
+  // API trả về object có chứa mảng "items"
+  return response.data.items || []; 
 };
 
 
@@ -134,18 +147,14 @@ const seoAlerts = [
 export default function Dashboard() {
   const [searchUrl, setSearchUrl] = useState("");
 
-  const { 
-    data: keywords, 
+ const { 
+    data: topKeywords, 
     isLoading, 
     isError 
   } = useQuery({
-    queryKey: ['keywords'], // Dùng chung key với trang Keyword Analysis
-    queryFn: fetchKeywords,
+    queryKey: ['topRankings'], // Đặt một key mới cho query này
+    queryFn: fetchTopRankings, // Gọi hàm mới
   });
-
-  const topKeywords = keywords
-    ?.sort((a, b) => a.position - b.position) // Sắp xếp theo vị trí tăng dần
-    .slice(0, 5); // Lấy 5 mục đầu tiên
 
   // Dữ liệu giả cho các phần khác của dashboard (bạn có thể thay thế sau)
   const websitePerformance = { score: 72, change: "+6%", trend: "up" as const };
@@ -318,60 +327,50 @@ export default function Dashboard() {
                   <TableRow>
                     <TableHead>Keyword</TableHead>
                     <TableHead className="text-center">Position</TableHead>
-                    <TableHead className="text-center">Change</TableHead>
                     <TableHead className="text-center">Search Volume</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {keywordPerformance.map((keyword, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        {keyword.keyword}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={
-                            keyword.position <= 3
-                              ? "default"
-                              : keyword.position <= 10
+<TableBody>
+                  {/* SỬA Ở ĐÂY 4: Cập nhật logic hiển thị bảng */}
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">Loading top keywords...</TableCell>
+                    </TableRow>
+                  ) : isError ? (
+                    <TableRow>
+                       <TableCell colSpan={4} className="text-center py-8 text-red-500">Failed to load data.</TableCell>
+                    </TableRow>
+                  ) : (
+                    topKeywords?.map((keyword, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          {keyword.keyword_name}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant={
+                              keyword.rank <= 3
+                                ? "default"
+                                : keyword.rank <= 10
                                 ? "outline"
                                 : "secondary"
-                          }
-                        >
-                          {keyword.position}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span
-                          className={`inline-flex items-center ${
-                            keyword.change > 0
-                              ? "text-green-600"
-                              : keyword.change < 0
-                                ? "text-red-600"
-                                : "text-gray-600"
-                          }`}
-                        >
-                          {keyword.change > 0 ? (
-                            <TrendingUp className="h-4 w-4 mr-1" />
-                          ) : keyword.change < 0 ? (
-                            <TrendingUp className="h-4 w-4 mr-1 transform rotate-180" />
-                          ) : (
-                            "-"
-                          )}
-                          {keyword.change !== 0 && Math.abs(keyword.change)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {keyword.searchVolume.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          <ArrowUpRight className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            }
+                          >
+                            {keyword.rank}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {keyword.search_volume.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            <ArrowUpRight className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
