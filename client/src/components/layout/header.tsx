@@ -1,6 +1,6 @@
 import { useState } from "react";
 // SỬA Ở ĐÂY 1: Thêm "User as UserIcon" để tránh trùng tên và "LogOut"
-import { Bell, Search, Sparkles, Globe, Zap, User as UserIcon, LogOut } from "lucide-react";
+import { Bell, Search, Sparkles, Globe, Zap, User as UserIcon, LogOut, Tags } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -26,12 +26,16 @@ const pathToTitle: Record<string, string> = {
   "/content-optimization": "Content Optimization",
   "/profile": "Hồ sơ của tôi",
   "/pricing": "Upgrade Plan", // Thêm dòng này
+  "/feature-comparison": "Pricing Details", // Thêm dòng này
+
 };
 
 const pathToDescription: Record<string, string> = {
   "/": "Overview of your SEO performance and recent optimizations",
   "/profile": "Xem và chỉnh sửa thông tin cá nhân của bạn",
   "/pricing": "Choose a plan that fits your needs", // Thêm dòng này
+  "/feature-comparison": "A detailed look at our features and plans", // Thêm dòng này
+
 };
 
 interface UserProfile {
@@ -74,13 +78,23 @@ export default function Header({ onLogout, user }: HeaderProps) {
         </div>
 
         {/* Phần còn lại của header không đổi */}
-        <div className="flex items-center md:hidden">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-            SEOBoostAI
-          </h1>
-        </div>
+        <Link href="/dashboard">
+          <div className="flex items-center md:hidden cursor-pointer">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+              SEOBoostAI
+            </h1>
+          </div>
+        </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          
+           <Link href="/feature-comparison">
+            <Button variant="outline" size="sm" className="hidden md:flex items-center gap-2">
+              <Tags className="h-4 w-4" />
+              <span>Bảng giá</span>
+            </Button>
+          </Link>
+
           <Link href="/pricing">
             <Button size="sm" className="hidden md:flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
               <Zap className="h-4 w-4" />

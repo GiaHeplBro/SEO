@@ -18,6 +18,8 @@ import LandingPage from '@/pages/LandingPage';
 import Auth from '@/components/loginGoogle/Auth';
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import FeatureComparisonPage from '@/pages/FeatureComparisonPage'; // Import trang mới
+
 
 // Định nghĩa interface UserProfile
 interface UserProfile {
@@ -28,6 +30,11 @@ interface UserProfile {
 
 // --- Component Layout chính của ứng dụng cho người dùng đã đăng nhập ---
 function MainAppLayout({ onLogout, user }: { onLogout: () => void; user: UserProfile }) {
+  const [location] = useLocation();
+  // Các trang không cần sidebar
+  const noSidebarRoutes = ['/feature-comparison'];
+  const showSidebar = !noSidebarRoutes.includes(location);
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -44,6 +51,9 @@ function MainAppLayout({ onLogout, user }: { onLogout: () => void; user: UserPro
             <Route path="/content-optimization" component={ContentOptimization} />
             <Route path="/profile" component={ProfilePage} />
             <Route path="/pricing" component={PricingPage} />
+
+            <Route path="/feature-comparison" component={FeatureComparisonPage} />
+
             {/* Nếu người dùng đã đăng nhập mà vào trang gốc, tự động chuyển đến dashboard */}
             <Route path="/"><Redirect to="/dashboard" /></Route>
             <Route component={NotFound} />
