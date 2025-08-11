@@ -1,4 +1,4 @@
-import { Search, Rocket, TrendingUp, BarChart2, Sparkles, Wand2, PlusCircle } from "lucide-react";
+import { Search, Rocket, TrendingUp, BarChart2, Sparkles, Wand2, PlusCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,11 +32,11 @@ interface Keyword {
     trend: string;
     intent: string;
 }
-interface RankTrackingItem { 
-    id: number; 
-    userId: number; 
-    keyword: string; 
-    rank: number; 
+interface RankTrackingItem {
+    id: number;
+    userId: number;
+    keyword: string;
+    rank: number;
 }
 interface PaginatedResponse<T> {
     items: T[];
@@ -83,6 +83,18 @@ const addRankTrackingApi = async ({ userId, keyword }: { userId: string, keyword
     });
     return data;
 };
+
+const updateRankTrackingApi = async (userId: string) => {
+    // Gửi userId dưới dạng số nguyên, không phải object
+    const { data } = await api.post('/RankTrackings/update-rank-tracking', parseInt(userId, 10), {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    return data;
+};
+
+
 
 export default function KeywordAnalysis() {
     const [filterTerm, setFilterTerm] = useState("");
@@ -147,6 +159,20 @@ export default function KeywordAnalysis() {
         onError: (error) => toast({ title: "Thất bại", description: error.message, variant: 'destructive' })
     });
 
+    const updateRankMutation = useMutation({
+        mutationFn: updateRankTrackingApi,
+        onSuccess: () => {
+            toast({ title: "Đang cập nhật", description: "Hệ thống đang cập nhật lại thứ hạng. Danh sách sẽ được làm mới sau giây lát." });
+            // Sau khi API chạy xong, làm mới lại query để lấy dữ liệu mới
+            setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['rankTrackings', userId] });
+            }, 5000); // Chờ 5 giây để backend có thể đã cập nhật xong
+        },
+        onError: (error) => {
+            toast({ title: "Thất bại", description: error.message, variant: 'destructive' });
+        }
+    });
+
     const handleGenerateClick = () => {
         if (!aiSeedKeyword) {
             toast({ title: "Lỗi", description: "Vui lòng nhập từ khóa gốc để tạo.", variant: "destructive" });
@@ -158,6 +184,14 @@ export default function KeywordAnalysis() {
     const handleAddTrackingClick = () => {
         if (!newTrackingKeyword || !userId) return;
         addTrackingMutation.mutate({ userId, keyword: newTrackingKeyword });
+    };
+
+    const handleUpdateRankClick = () => {
+        if (!userId) {
+            toast({ title: "Lỗi", description: "Không thể xác thực người dùng.", variant: "destructive" });
+            return;
+        }
+        updateRankMutation.mutate(userId);
     };
 
     return (
@@ -208,9 +242,9 @@ export default function KeywordAnalysis() {
                         <CardHeader className="pb-2">
                             <CardTitle>Kết quả phân tích từ khóa</CardTitle>
                             <CardDescription>
-                                {isSearching ? `Searching...` : 
-                                 debouncedFilterTerm ? `Found ${searchedData?.pages[0]?.totalItems || 0} results for "${debouncedFilterTerm}"` :
-                                 "Nhập từ khóa vào ô tìm kiếm để bắt đầu."}
+                                {isSearching ? `Searching...` :
+                                    debouncedFilterTerm ? `Found ${searchedData?.pages[0]?.totalItems || 0} results for "${debouncedFilterTerm}"` :
+                                        "Nhập từ khóa vào ô tìm kiếm để bắt đầu."}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -285,7 +319,30 @@ export default function KeywordAnalysis() {
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><CardTitle>Theo dõi thứ hạng từ khóa</CardTitle><CardDescription>Vị trí các từ khóa bạn đang theo dõi.</CardDescription></CardHeader>
+
+
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle>Theo dõi thứ hạng từ khóa</CardTitle>
+                                    <CardDescription>Vị trí các từ khóa bạn đang theo dõi.</CardDescription>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleUpdateRankClick} // SỬA Ở ĐÂY: Gọi hàm xử lý mới
+                                    disabled={updateRankMutation.isPending}
+                                >
+                                    {updateRankMutation.isPending ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="h-4 w-4" />
+                                    )}
+                                    <span className="ml-2">Cập nhật</span>
+                                </Button>
+                            </div>
+                        </CardHeader>
+
                         <CardContent>
                             {isLoadingRankings ? <div className="text-center p-12">Loading...</div> :
                                 <Table>
