@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
-// Import các component UI (giả định bạn dùng shadcn/ui)
+// Import các component UI
 import {
   Table,
   TableBody,
@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import api from '@/axiosInstance'; // Sử dụng lại instance axios đã có
 
-// --- Định nghĩa kiểu dữ liệu cho một User dựa trên database của bạn ---
+// SỬA Ở ĐÂY 1: Cập nhật interface cho khớp với API mới
 interface User {
   id: number;
   username: string;
@@ -21,33 +22,24 @@ interface User {
   email: string;
   role: string;
   avatar: string;
-  accountType: string;
   createdAt: string;
+  // Thuộc tính 'accountType' đã được xóa
 }
 
-// --- Tạo một axios instance với base URL từ file .env ---
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-});
-
 // --- Hàm gọi API để lấy danh sách người dùng ---
-// API này yêu cầu xác thực, nên chúng ta cần gửi kèm Access Token
 const fetchUsers = async (): Promise<User[]> => {
-  // Lấy token từ localStorage
   const storedTokens = localStorage.getItem('tokens');
   if (!storedTokens) {
     throw new Error("Không tìm thấy token xác thực. Vui lòng đăng nhập lại.");
   }
-
   const { accessToken } = JSON.parse(storedTokens);
   if (!accessToken) {
     throw new Error("Access token không hợp lệ. Vui lòng đăng nhập lại.");
   }
 
-  // Gọi API với header Authorization
   const response = await api.get('/Users', {
     headers: {
-      Authorization: `Bearer ${accessToken}`, // Gửi token theo chuẩn Bearer
+      Authorization: `Bearer ${accessToken}`,
     },
   });
 
@@ -56,19 +48,17 @@ const fetchUsers = async (): Promise<User[]> => {
 
 // --- Component chính của trang Users ---
 export default function UsersPage() {
-  // Sử dụng useQuery để fetch dữ liệu
   const { 
     data: users, 
     isLoading, 
     isError, 
     error 
   } = useQuery({
-    queryKey: ['users'], // Key để cache dữ liệu
-    queryFn: fetchUsers, // Hàm để gọi API
-    retry: 1, // Chỉ thử lại 1 lần nếu có lỗi
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+    retry: 1,
   });
 
-  // --- Xử lý trạng thái đang tải ---
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -77,7 +67,6 @@ export default function UsersPage() {
     );
   }
 
-  // --- Xử lý trạng thái lỗi ---
   if (isError) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -88,7 +77,6 @@ export default function UsersPage() {
     );
   }
 
-  // --- Giao diện chính khi có dữ liệu ---
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Quản lý người dùng</h1>
@@ -98,7 +86,7 @@ export default function UsersPage() {
             <TableRow>
               <TableHead className="w-[300px]">Tên người dùng</TableHead>
               <TableHead>Vai trò</TableHead>
-              <TableHead>Loại tài khoản</TableHead>
+              {/* SỬA Ở ĐÂY 2: Xóa cột "Loại tài khoản" */}
               <TableHead>Ngày tham gia</TableHead>
             </TableRow>
           </TableHeader>
@@ -108,7 +96,6 @@ export default function UsersPage() {
                 <TableCell>
                   <div className="flex items-center gap-4">
                     <Avatar>
-                      {/* Nếu user.avatar có link ảnh thì hiển thị, nếu không thì hiển thị fallback */}
                       <AvatarImage src={user.avatar || undefined} alt={user.fullName} />
                       <AvatarFallback>
                         {user.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -121,13 +108,11 @@ export default function UsersPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={user.role === 'Admin' ? 'destructive' : 'secondary'}>
+                  <Badge variant={user.role.toLowerCase() === 'admin' ? 'destructive' : 'secondary'}>
                     {user.role}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{user.accountType}</Badge>
-                </TableCell>
+                {/* SỬA Ở ĐÂY 3: Xóa ô hiển thị "Loại tài khoản" */}
                 <TableCell>
                   {new Date(user.createdAt).toLocaleDateString('vi-VN')}
                 </TableCell>

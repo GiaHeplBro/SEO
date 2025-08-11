@@ -39,9 +39,8 @@ interface ContentOptimizationPayload {
 }
 
 // --- Khai báo hằng số bên ngoài component ---
-const READABILITY_LEVELS = ["Easy", "Medium", "Hard", "Advanced", "Expert"];
-
-const CONTENT_LENGTH_LEVELS = ["Short", "Medium", "Long", "Comprehensive", "In-depth"];
+const READABILITY_LEVELS = ["Dễ", "Trung bình", "Khó", "Nâng cao", "Chuyên gia"];
+const CONTENT_LENGTH_LEVELS = ["Ngắn", "Trung bình", "Dài", "Toàn diện", "Chi tiết"];
 
 // --- Khởi tạo axios instance ---
 const api = axios.create({
@@ -168,10 +167,10 @@ export default function ContentOptimization() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold flex items-center">
-          Content Optimization <Sparkles className="ml-2 h-6 w-6 text-yellow-500" />
+          Tối ưu nội dung <Sparkles className="ml-2 h-6 w-6 text-yellow-500" />
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
-          AI-powered content enhancement for better search rankings and engagement
+          Nâng cao nội dung bằng AI để cải thiện xếp hạng tìm kiếm và mức độ tương tác          
         </p>
       </div>
 
@@ -179,32 +178,32 @@ export default function ContentOptimization() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Content Input</CardTitle>
-              <CardDescription>Enter your content to optimize for SEO and readability</CardDescription>
+              <CardTitle>Nhập nội dung</CardTitle>
+              <CardDescription>Nhập nội dung để tối ưu cho SEO và khả năng đọc</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="target-keyword">Target Keyword or Topic</Label>
+                <Label htmlFor="target-keyword">Từ khóa hoặc chủ đề</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input id="target-keyword" placeholder="e.g., content optimization techniques" value={targetKeyword} onChange={(e) => setTargetKeyword(e.target.value)} className="pl-9" />
+                  <Input id="target-keyword" placeholder="Ví dụ: kỹ thuật tối ưu nội dung" value={targetKeyword} onChange={(e) => setTargetKeyword(e.target.value)} className="pl-9" />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <Label htmlFor="content">Your Content</Label>
-                  <span className="text-xs text-muted-foreground">{content.length} characters</span>
+                  <Label htmlFor="content">Nội dung của bạn</Label>
+                  <span className="text-xs text-muted-foreground">{content.length} ký tự</span>
                 </div>
-                <Textarea id="content" placeholder="Paste your content here..." value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[200px]" />
+                <Textarea id="content" placeholder="Dán nội dung vào đây..." value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[200px]" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>Optimization Settings</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Cài đặt tối ưu</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <Label>Content Length</Label>
+                  <Label>Độ dài nội dung</Label>
                   <span className="text-sm font-medium">
                     {CONTENT_LENGTH_LEVELS[contentLengthPreference[0] - 1]}
                   </span>
@@ -218,17 +217,17 @@ export default function ContentOptimization() {
                 />
               </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center"><Label>Optimization Level</Label><span className="text-sm font-medium">Level {optimizationLevel[0]}</span></div>
+                <div className="flex justify-between items-center"><Label>Mức tối ưu</Label><span className="text-sm font-medium">Level {optimizationLevel[0]}</span></div>
                 <Slider min={1} max={5} step={1} value={optimizationLevel} onValueChange={setOptimizationLevel} />
               </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center"><Label>Readability Level</Label><span className="text-sm font-medium">{READABILITY_LEVELS[readabilityPreference[0] - 1]}</span></div>
+                <div className="flex justify-between items-center"><Label>Mức độ dễ đọc</Label><span className="text-sm font-medium">{READABILITY_LEVELS[readabilityPreference[0] - 1]}</span></div>
                 <Slider min={1} max={READABILITY_LEVELS.length} step={1} value={readabilityPreference} onValueChange={setReadabilityPreference} />
               </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
               <Button className="ml-auto flex items-center gap-2" onClick={handleOptimize} disabled={mutation.isPending || !content || !targetKeyword}>
-                {mutation.isPending ? "Optimizing..." : <><Wand2 className="h-4 w-4" /><span>Optimize with AI</span></>}
+                {mutation.isPending ? "Đang tối ưu..." : <><Wand2 className="h-4 w-4" /><span>Tối ưu bằng AI</span></>}
               </Button>
             </CardFooter>
           </Card>
@@ -237,10 +236,10 @@ export default function ContentOptimization() {
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center"><History className="mr-2 h-5 w-5" /> Optimization History</CardTitle>
+              <CardTitle className="flex items-center"><History className="mr-2 h-5 w-5" /> Lịch sử tối ưu</CardTitle>
             </CardHeader>
             <CardContent className="max-h-[600px] overflow-y-auto">
-              {isLoadingHistory ? <p>Loading history...</p> :
+              {isLoadingHistory ? <p>Đang tải lịch sử...</p> :
                 history && history.length > 0 ? (
                   <Accordion type="single" collapsible className="w-full">
                     {history.map(item => (
@@ -255,13 +254,13 @@ export default function ContentOptimization() {
                           {/* Nội dung chi tiết của kết quả */}
                           <div className="space-y-4 p-2">
                             <div>
-                              <Label className="text-xs font-semibold">Optimized Content</Label>
+                              <Label className="text-xs font-semibold">Nội dung đã tối ưu</Label>
                               <pre className="mt-1 border rounded-md p-2 bg-gray-50 dark:bg-gray-800 whitespace-pre-wrap font-sans text-xs max-h-40 overflow-y-auto">
-                                {item.optimizedContent ?? "Not available."}
+                                {item.optimizedContent ?? "Không có dữ liệu."}
                               </pre>
                             </div>
                             <div className="space-y-2">
-                              <Label className="text-xs font-semibold">Content Scores</Label>
+                              <Label className="text-xs font-semibold">Điểm nội dung</Label>
                               <div className="grid grid-cols-2 gap-2">
                                 <ScoreCard title="SEO Score" score={item.seoscore} />
                                 <ScoreCard title="Readability" score={item.readability} />
@@ -275,7 +274,7 @@ export default function ContentOptimization() {
                     ))}
                   </Accordion>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">No history found.</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">Không có lịch sử.</p>
                 )
               }
             </CardContent>

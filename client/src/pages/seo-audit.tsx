@@ -153,14 +153,20 @@ export default function SeoAudit() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">SEO Audit</h1>
-        <p className="text-gray-500 dark:text-gray-400">Comprehensive analysis of your website's SEO health and performance</p>
+        <h1 className="text-3xl font-bold">Báo cáo SEO</h1>
+        <p className="text-gray-500 dark:text-gray-400">
+          Phân tích toàn diện tình trạng SEO và hiệu suất website của bạn
+        </p>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
           <Card>
-            <CardHeader><CardTitle>Website Analysis</CardTitle><CardDescription>Enter URL to start</CardDescription></CardHeader>
+            <CardHeader>
+              <CardTitle>Phân tích Website</CardTitle>
+              <CardDescription>Nhập URL để bắt đầu phân tích</CardDescription>
+            </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
@@ -168,13 +174,24 @@ export default function SeoAudit() {
                   <Input className="pl-9" placeholder="https://example.com" value={url} onChange={(e) => setUrl(e.target.value)} />
                 </div>
                 <Button className="flex items-center gap-2" onClick={handleAnalyzeClick} disabled={mutation.isPending}>
-                  {mutation.isPending ? "Analysising..." : <><Search className="h-4 w-4" /><span>Analysis</span></>}
+                  {mutation.isPending
+                    ? "Đang phân tích..."
+                    : <>
+                      <Search className="h-4 w-4" />
+                      <span>Phân tích</span>
+                    </>
+                  }
                 </Button>
+
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="flex items-center"><History className="h-5 w-5 mr-2" /> History Audit</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <History className="h-5 w-5 mr-2" /> Lịch sử báo cáo
+              </CardTitle>
+            </CardHeader>
             <CardContent className="max-h-96 overflow-y-auto">
               {isLoadingHistory ? <p>Đang tải lịch sử...</p> :
                 <ul className="space-y-2">
@@ -214,11 +231,11 @@ export default function SeoAudit() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                     <div className="flex justify-center md:justify-start">
 
-<CircularProgress
-                      progress={selectedReport.overallScore}
-                      color={getScoreColor(selectedReport.overallScore)}
-                    />
-                  </div>
+                      <CircularProgress
+                        progress={selectedReport.overallScore}
+                        color={getScoreColor(selectedReport.overallScore)}
+                      />
+                    </div>
 
                     <div className="grid grid-cols-2 gap-3 md:col-span-3">
                       <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-red-100 rounded-full p-2"><XCircle className="h-5 w-5 text-red-600" /></div><div><p className="text-sm text-muted-foreground">Critical Issues</p><p className="text-xl font-bold">{selectedReport.criticalIssue}</p></div></CardContent></Card>

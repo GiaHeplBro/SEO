@@ -25,7 +25,7 @@ const pathToTitle: Record<string, string> = {
   "/on-page-optimization": "On-Page Optimization",
   "/content-optimization": "Content Optimization",
   "/profile": "Hồ sơ của tôi",
-  "/pricing": "Upgrade Plan", // Thêm dòng này
+  "/pricing": "Nâng Cấp Tài Khoản", // Thêm dòng này
   "/feature-comparison": "Pricing Details", // Thêm dòng này
 
 };
@@ -33,7 +33,7 @@ const pathToTitle: Record<string, string> = {
 const pathToDescription: Record<string, string> = {
   "/": "Overview of your SEO performance and recent optimizations",
   "/profile": "Xem và chỉnh sửa thông tin cá nhân của bạn",
-  "/pricing": "Choose a plan that fits your needs", // Thêm dòng này
+  "/pricing": "Chọn gói mà bạn muốn nâng cấp", // Thêm dòng này
   "/feature-comparison": "A detailed look at our features and plans", // Thêm dòng này
 
 };
@@ -98,7 +98,7 @@ export default function Header({ onLogout, user }: HeaderProps) {
           <Link href="/pricing">
             <Button size="sm" className="hidden md:flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
               <Zap className="h-4 w-4" />
-              <span>Upgrade</span>
+              <span>Nâng Cấp</span>
             </Button>
           </Link>
 

@@ -13,25 +13,25 @@ import {
 
 const menuItems = [
   {
-    category: "SEO Tools",
+    category: "Công Cụ SEO",
     items: [
       {
-        name: "Dashboard",
+        name: "Trang Chủ",
         icon: <LayoutDashboard className="mr-3 h-5 w-5" />,
         path: "/",
       },
       {
-        name: "Keyword Analysis",
+        name: "Phân Tích Keyword",
         icon: <Search className="mr-3 h-5 w-5" />,
         path: "/keyword-analysis",
       },
       {
-        name: "SEO Audit",
+        name: "Phân Tích Website",
         icon: <FileSearch className="mr-3 h-5 w-5" />,
         path: "/seo-audit",
       },
       {
-        name: "Content Optimization",
+        name: "Tối Ưu Hóa Nội Dung",
         icon: <Sparkles className="mr-3 h-5 w-5" />,
         path: "/content-optimization",
       },

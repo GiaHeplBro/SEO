@@ -7,44 +7,49 @@ import { Check, ArrowLeft, Zap } from "lucide-react";
 const pricingTiers = [
   {
     name: "Free",
-    price: "$0",
-    description: "Get started with our basic features, completely free.",
+    price: "0 VNĐ",
+    description: "Bắt đầu với các tính năng cơ bản, hoàn toàn miễn phí cho bạn.",
     features: [
-      "5 SEO Audits per month",
-      "10 Keyword Analyses per month",
-      "Basic On-Page suggestions",
-      "Community support",
+      "20.000 Token mỗi tháng",
+      "Tối ưu từ khóa",
+      "Chấm điểm SEO",
+      "Viết lại nội dung bằng AI",
+      "Hỗ trợ và tư vấn qua Email",
+
     ],
-    buttonText: "Your Current Plan",
+    buttonText: "Gói hiện tại",
     isCurrent: true,
   },
   {
-    name: "Pro",
-    price: "$19",
-    description: "Unlock powerful tools for serious SEO professionals.",
+    name: "Basic",
+    price: "250.000 VNĐ",
+    description: "Mở khóa các công cụ mạnh mẽ dành cho các chuyên gia SEO có kinh nghiệm hoặc muốn bắt đầu.",
     features: [
-      "Unlimited SEO Audits",
-      "Unlimited Keyword Analyses",
-      "AI Content Optimization",
-      "Rank Tracking (100 keywords)",
-      "Email & Chat support",
+      "100.000 Token mỗi tháng",
+      "Tối ưu từ khóa",
+      "Chấm điểm SEO",
+      "Viết lại nội dung bằng AI",
+      "Báo cáo và phân tích backlink tự động.",
+      "Hỗ trợ tư vấn qua Email và Chat Support",
     ],
-    buttonText: "Upgrade to Pro",
+    buttonText: "Nâng cấp lên gói Basic",
     isCurrent: false,
     isPopular: true,
   },
   {
-    name: "Business",
-    price: "$49",
+    name: "Pro",
+    price: "370.000 VNĐ",
     description: "The complete suite for agencies and large teams.",
     features: [
-      "All features in Pro",
-      "API Access",
-      "Team collaboration (5 users)",
-      "White-label reports",
-      "Dedicated support manager",
+      "350.000 Token mỗi tháng",
+      "Tối ưu từ khóa",
+      "Chấm điểm SEO",
+      "Viết lại nội dung bằng AI",
+      "Báo cáo và phân tích backlink tự động.",
+      "Đề xuất cải tiến kỹ thuật SEO.",
+      "Hỗ trợ tư vấn qua Email và Chat Support",
     ],
-    buttonText: "Contact Sales",
+    buttonText: "Nâng cấp lên gói Pro",
     isCurrent: false,
   },
 ];
@@ -53,9 +58,9 @@ export default function PricingPage() {
   return (
     <div className="container mx-auto py-12">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight">Find the Perfect Plan</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Gói tốt nhất cho bạn</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Choose the plan that fits your needs and start improving your SEO today.
+          Chọn gói phù hợp với nhu cầu của bạn và bắt đầu cải thiện SEO ngay hôm nay.
         </p>
       </div>
 
@@ -64,7 +69,7 @@ export default function PricingPage() {
           <Card key={tier.name} className={`flex flex-col ${tier.isPopular ? 'border-primary shadow-lg' : ''}`}>
             {tier.isPopular && (
               <div className="py-1 px-3 bg-primary text-primary-foreground text-sm font-semibold rounded-t-lg text-center">
-                Most Popular
+                Phổ biến nhất
               </div>
             )}
             <CardHeader className="text-center">
@@ -98,7 +103,7 @@ export default function PricingPage() {
         <Link href="/">
           <Button variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Về trang chủ
           </Button>
         </Link>
       </div>

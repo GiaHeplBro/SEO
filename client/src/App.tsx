@@ -19,6 +19,8 @@ import Auth from '@/components/loginGoogle/Auth';
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import FeatureComparisonPage from '@/pages/FeatureComparisonPage'; // Import trang mới
+import AdminPage from '@/pages/AdminPage'; // 1. Import trang Admin mới
+
 
 
 // Định nghĩa interface UserProfile
@@ -92,24 +94,33 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-        {user ? (
+      {/* SỬA Ở ĐÂY: Cấu trúc lại Switch để ưu tiên route /admin */}
+      <Switch>
+        {/* Route /admin sẽ luôn được kiểm tra trước và luôn truy cập được */}
+        <Route path="/admin" component={AdminPage} />
+
+        {/* Đối với tất cả các route còn lại, ta mới kiểm tra trạng thái đăng nhập */}
+        <Route>
+          {user ? (
             // NẾU ĐÃ ĐĂNG NHẬP: Hiển thị giao diện ứng dụng chính
             <MainAppLayout onLogout={handleLogout} user={user} />
-        ) : (
+          ) : (
             // NẾU CHƯA ĐĂNG NHẬP: Hiển thị các trang public
             <Switch>
-                <Route path="/" component={LandingPage} />
-                <Route path="/login">
-                  <Auth onLoginSuccess={handleLoginSuccess} />
-                </Route>
-                <Route path="/pricing" component={PricingPage} />
-                {/* Nếu người dùng chưa đăng nhập mà cố vào một trang khác, đưa về trang chủ */}
-                <Route>
-                  <Redirect to="/" />
-                </Route>
+              <Route path="/" component={LandingPage} />
+              <Route path="/login">
+                <Auth onLoginSuccess={handleLoginSuccess} />
+              </Route>
+              <Route path="/pricing" component={PricingPage} />
+              {/* Nếu người dùng chưa đăng nhập mà cố vào một trang khác, đưa về trang chủ */}
+              <Route>
+                <Redirect to="/" />
+              </Route>
             </Switch>
-        )}
-        <Toaster />
+          )}
+        </Route>
+      </Switch>
+      <Toaster />
     </QueryClientProvider>
   );
 }

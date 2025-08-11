@@ -49,19 +49,19 @@ interface KeywordData {
   searchVolume: number;
   difficulty: number;
   // Giả sử có thêm trường 'change'
-  change?: number; 
+  change?: number;
 }
 
 const fetchKeywords = async (): Promise<KeywordData[]> => {
   // Giả định API của trang Keyword Analysis là /Keywords
-  const { data } = await api.get('/Keywords'); 
+  const { data } = await api.get('/Keywords');
   return data;
 };
 
 const fetchTopRankings = async (): Promise<TopRankingKeyword[]> => {
   const response = await axios.post('https://seo-flask-api.azurewebsites.net/top-ranking');
   // API trả về object có chứa mảng "items"
-  return response.data.items || []; 
+  return response.data.items || [];
 };
 
 
@@ -147,10 +147,10 @@ const seoAlerts = [
 export default function Dashboard() {
   const [searchUrl, setSearchUrl] = useState("");
 
- const { 
-    data: topKeywords, 
-    isLoading, 
-    isError 
+  const {
+    data: topKeywords,
+    isLoading,
+    isError
   } = useQuery({
     queryKey: ['topRankings'], // Đặt một key mới cho query này
     queryFn: fetchTopRankings, // Gọi hàm mới
@@ -162,9 +162,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-3xl font-bold">Trang chủ</h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Overview of your SEO performance and optimization opportunities
+          Tổng quan về hiệu suất SEO và các cơ hội tối ưu hóa của bạn
         </p>
       </div>
 
@@ -174,11 +174,10 @@ export default function Dashboard() {
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <h2 className="text-xl font-semibold mb-2">
-                Quick Website Analysis
+                Phân tích Website nhanh
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Enter any URL to get an instant SEO analysis and optimization
-                recommendations
+                Nhập bất kỳ URL nào để nhận ngay phân tích SEO và đề xuất tối ưu hóa
               </p>
               <div className="flex space-x-2">
                 <div className="relative flex-1">
@@ -190,7 +189,7 @@ export default function Dashboard() {
                     onChange={(e) => setSearchUrl(e.target.value)}
                   />
                 </div>
-                <Button>Analyze</Button>
+                <Button>Phân tích</Button>
               </div>
             </div>
             <div className="flex items-center justify-center md:justify-end">
@@ -198,19 +197,19 @@ export default function Dashboard() {
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-600">25k+</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Keywords Tracked
+                    Từ khóa được theo dõi
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-indigo-600">150+</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Websites Analyzed
+                    Trang web được phân tích
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-purple-600">92%</div>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Success Rate
+                    Tỷ lệ thành công
                   </div>
                 </div>
               </div>
@@ -222,7 +221,7 @@ export default function Dashboard() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Website Score</CardTitle>
+            <CardTitle className="text-sm font-medium">Điểm Website</CardTitle>
             <div
               className={`${websitePerformance.trend === "up" ? "text-green-600" : "text-red-600"} flex items-center text-xs font-medium`}
             >
@@ -240,7 +239,8 @@ export default function Dashboard() {
                 {websitePerformance.score}/100
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                Website Health Score
+                Hiệu suất Website
+
               </div>
               <Progress value={websitePerformance.score} className="h-2 mt-3" />
             </div>
@@ -250,15 +250,15 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Keywords in Top 10
+              Từ khóa trong Top 10
             </CardTitle>
             <Search className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">24</div>
             <div className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-600 font-medium">+3 keywords</span>{" "}
-              since last month
+              <span className="text-green-600 font-medium">+3 từ khóa</span>{" "}
+              kể từ tháng trước
             </div>
             <Progress value={24} max={50} className="h-2 mt-3" />
           </CardContent>
@@ -280,14 +280,14 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Content Score</CardTitle>
+            <CardTitle className="text-sm font-medium">Điểm nội dung</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">78/100</div>
             <div className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-600 font-medium">+12 points</span>{" "}
-              with AI optimization
+              <span className="text-green-600 font-medium">+12 điểm</span>{" "}
+              với tối ưu hóa AI
             </div>
             <Progress value={78} className="h-2 mt-3" />
           </CardContent>
@@ -296,7 +296,7 @@ export default function Dashboard() {
 
       <Tabs defaultValue="keywords" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="keywords">Keyword Rankings</TabsTrigger>
+          <TabsTrigger value="keywords">Xếp hạng từ khóa</TabsTrigger>
           {/* <TabsTrigger value="audits">Recent Audits</TabsTrigger>
           <TabsTrigger value="alerts">SEO Alerts</TabsTrigger> */}
         </TabsList>
@@ -306,9 +306,9 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>Top Keyword Rankings</CardTitle>
+                  <CardTitle>Xếp hạng từ khóa hàng đầu</CardTitle>
                   <CardDescription>
-                    Performance of your top keywords in search results
+                    Hiệu suất của các từ khóa hàng đầu của bạn trong kết quả tìm kiếm
                   </CardDescription>
                 </div>
                 <Button
@@ -325,13 +325,13 @@ export default function Dashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Keyword</TableHead>
-                    <TableHead className="text-center">Position</TableHead>
-                    <TableHead className="text-center">Search Volume</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Từ khóa</TableHead>
+                    <TableHead className="text-center">Xếp hạng</TableHead>
+                    <TableHead className="text-center">Khối lượng tìm kiếm</TableHead>
+                    <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
-<TableBody>
+                <TableBody>
                   {/* SỬA Ở ĐÂY 4: Cập nhật logic hiển thị bảng */}
                   {isLoading ? (
                     <TableRow>
@@ -339,7 +339,7 @@ export default function Dashboard() {
                     </TableRow>
                   ) : isError ? (
                     <TableRow>
-                       <TableCell colSpan={4} className="text-center py-8 text-red-500">Failed to load data.</TableCell>
+                      <TableCell colSpan={4} className="text-center py-8 text-red-500">Failed to load data.</TableCell>
                     </TableRow>
                   ) : (
                     topKeywords?.map((keyword, index) => (
@@ -353,8 +353,8 @@ export default function Dashboard() {
                               keyword.rank <= 3
                                 ? "default"
                                 : keyword.rank <= 10
-                                ? "outline"
-                                : "secondary"
+                                  ? "outline"
+                                  : "secondary"
                             }
                           >
                             {keyword.rank}
@@ -538,22 +538,22 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Optimization Opportunities</CardTitle>
+              <CardTitle>Cơ hội tối ưu hóa</CardTitle>
               <Badge className="bg-blue-50 border-blue-200 text-blue-700">
-                4 New
+                + 4
               </Badge>
             </div>
             <CardDescription>
-              Quick wins to improve your SEO performance
+              Những thao tác nhanh chóng để cải thiện hiệu suất SEO của bạn
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {[
-                "Optimize title tags on 7 pages",
-                "Fix 12 broken internal links",
-                "Improve page load speed on mobile",
-                "Add schema markup to product pages",
+                "Tối ưu hóa thẻ tiêu đề trên 7 trang wed",
+                "Sửa 12 liên kết nội bộ bị hỏng",
+                "Cải thiện tốc độ tải trang trên thiết bị di động",
+                "Thêm đánh dấu lược đồ vào trang sản phẩm",
               ].map((suggestion, i) => (
                 <div
                   key={i}
@@ -579,18 +579,18 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>AI Content Recommendations</CardTitle>
+            <CardTitle>Đề xuất nội dung AI</CardTitle>
             <CardDescription>
-              AI-powered content ideas to improve your rankings
+              Ý tưởng nội dung hỗ trợ AI để cải thiện thứ hạng của bạn
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {[
-                "Create a comprehensive guide on 'SEO best practices'",
-                "Add more detail to your article on 'keyword research'",
-                "Improve content readability on your services page",
-                "Update your blog post about 'Google algorithm updates'",
+                "Tạo các hướng dẫn toàn diện về 'Các phương pháp hay nhất về SEO'",
+                "Thêm chi tiết vào bài viết của bạn về 'nghiên cứu từ khóa",
+                "Cải thiện khả năng đọc nội dung trên trang dịch vụ của bạn",
+                "Cập nhật bài đăng trên blog của bạn về 'Cập nhật thuật toán Google'",
               ].map((suggestion, i) => (
                 <div
                   key={i}

@@ -1,63 +1,53 @@
-import React from "react"; // SỬA Ở ĐÂY 1: Thêm import React
+import React from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { Check, Minus, ArrowLeft } from "lucide-react";
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-// Dữ liệu so sánh tính năng
+// Dữ liệu so sánh tính năng đã được Việt hóa
 const featureData = {
-    headers: ["Free", "Basic", "Pro", "Business"],
+    headers: ["Miễn phí", "Cơ bản", "Chuyên nghiệp", "Doanh nghiệp"],
     features: [
         {
-            category: "Core Features",
+            category: "Tính năng cốt lõi",
             items: [
-                { name: "SEO Audits", values: ["5/month", "Unlimited", "Unlimited", "Unlimited"] },
-                { name: "Keyword Analysis", values: ["10/month", "Unlimited", "Unlimited", "Unlimited"] },
-                { name: "AI Content Optimization", values: [false, true, true, true] },
-                { name: "Rank Tracking", values: ["5 keywords", "100 keywords", "500 keywords", "1,500 keywords"] },
-                { name: "Automated Backlink Analysis", values: [false, false, true, true] },
-                { name: "Technical SEO Recommendations", values: [false, false, true, true] },
+                { name: "Kiểm tra SEO", values: ["5/tháng", "Không giới hạn", "Không giới hạn", "Không giới hạn"] },
+                { name: "Phân tích từ khóa", values: ["10/tháng", "Không giới hạn", "Không giới hạn", "Không giới hạn"] },
+                { name: "Tối ưu hóa nội dung bằng AI", values: [false, true, true, true] },
+                { name: "Theo dõi thứ hạng", values: ["5 từ khóa", "100 từ khóa", "500 từ khóa", "1.500 từ khóa"] },
+                { name: "Phân tích backlink tự động", values: [false, false, true, true] },
+                { name: "Đề xuất SEO kỹ thuật", values: [false, false, true, true] },
             ]
         },
         {
-            category: "Team & Collaboration",
+            category: "Nhóm & Cộng tác",
             items: [
-                { name: "Team Members", values: [1, 2, 10, "50+"] },
-                { name: "Team Roles & Permissions", values: [false, false, true, true] },
-                { name: "Collaboration Tools", values: [false, true, true, true] },
+                { name: "Thành viên nhóm", values: [1, 2, 10, "50+"] },
+                { name: "Vai trò & Quyền của nhóm", values: [false, false, true, true] },
+                { name: "Công cụ cộng tác", values: [false, true, true, true] },
             ]
         },
-        // {
-        //     category: "Reporting & API",
-        //     items: [
-        //         { name: "Custom PDF Reports", values: [false, true, true, true] },
-        //         { name: "White-label Reports", values: [false, false, false, true] },
-        //         { name: "API Access", values: [false, false, false, true] },
-        //     ]
-        // },
         {
-            category: "Support",
+            category: "Hỗ trợ",
             items: [
-                { name: "Community Support", values: [true, true, true, true] },
-                { name: "Email & Chat Support", values: [false, true, true, true] },
-                { name: "Dedicated Support Manager", values: [false, false, false, true] },
+                { name: "Hỗ trợ cộng đồng", values: [true, true, true, true] },
+                { name: "Hỗ trợ qua Email & Chat", values: [false, true, true, true] },
+                { name: "Quản lý hỗ trợ riêng", values: [false, false, false, true] },
             ]
         }
     ]
 };
 
-
+// Dịch vụ trả phí theo lần sử dụng đã được Việt hóa
 const payPerUseServices = [
-    { name: "SEO Audit", price: "99.000 VNĐ" },
-    { name: "Content AI", price: "79.000 VNĐ" },
-    { name: "Backlink Analysis", price: "89.000 VNĐ" },
-    { name: "Technical SEO Fix", price: "129.000 VNĐ" },
+    { name: "Kiểm tra SEO", price: "99.000 VNĐ" },
+    { name: "AI Nội dung", price: "79.000 VNĐ" },
+    { name: "Phân tích Backlink", price: "89.000 VNĐ" },
+    { name: "Sửa lỗi SEO kỹ thuật", price: "129.000 VNĐ" },
 ];
 
-
+// Component hiển thị icon hoặc giá trị cho tính năng
 const FeatureIcon = ({ value }: { value: string | boolean | number }) => {
     if (typeof value === 'boolean') {
         // Nếu là true, hiển thị icon Check to và đậm hơn
@@ -70,14 +60,14 @@ const FeatureIcon = ({ value }: { value: string | boolean | number }) => {
     return <span className="text-base font-semibold">{value}</span>;
 };
 
-
+// Component chính của trang so sánh
 export default function FeatureComparisonPage() {
     return (
         <div className="container mx-auto py-12">
             <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold tracking-tight">Compare Our Plans</h1>
+                <h1 className="text-4xl font-bold tracking-tight">So sánh các gói của chúng tôi</h1>
                 <p className="mt-4 text-lg text-muted-foreground">
-                    Find the perfect plan with the right features to boost your SEO performance.
+                    Tìm gói hoàn hảo với các tính năng phù hợp để nâng cao hiệu suất SEO của bạn.
                 </p>
             </div>
 
@@ -86,8 +76,7 @@ export default function FeatureComparisonPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                {/* SỬA Ở ĐÂY: Áp dụng style mới cho header */}
-                                <TableHead className="w-[300px] text-sm font-bold">Features</TableHead>
+                                <TableHead className="w-[300px] text-sm font-bold">Tính năng</TableHead>
                                 {featureData.headers.map(header => (
                                     <TableHead
                                         key={header}
@@ -109,11 +98,9 @@ export default function FeatureComparisonPage() {
                                         <TableRow key={item.name}>
                                             <TableCell className="font-medium">{item.name}</TableCell>
                                             {item.values.map((value, index) => (
-
                                                 <TableCell key={index} className="text-left">
                                                     <FeatureIcon value={value} />
                                                 </TableCell>
-
                                             ))}
                                         </TableRow>
                                     ))}
@@ -126,28 +113,23 @@ export default function FeatureComparisonPage() {
 
             <div className="mt-16">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold">Pay-Per-Use Services</h2>
-                    <p className="mt-2 text-muted-foreground">Need a one-time service? Choose from our a la carte options.</p>
+                    <h2 className="text-3xl font-bold">Dịch vụ trả phí theo lần sử dụng</h2>
+                    <p className="mt-2 text-muted-foreground">Cần một dịch vụ một lần? Chọn từ các tùy chọn riêng lẻ của chúng tôi.</p>
                 </div>
                 <Card>
                     <CardContent className="p-0">
                         <Table>
                             <TableHeader>
-
                                 <TableRow>
-                                    {/* SỬA Ở ĐÂY: Áp dụng style mới cho header */}
-                                    <TableHead className="text-sm font-bold "   style={{ fontSize: "150%" }}>Dịch Vụ Trả Phí Theo Lẻ</TableHead>
-                                    <TableHead className="text-right text-sm font-bold "   style={{ fontSize: "150%" }}>Chi Phí Bán</TableHead>
+                                    <TableHead className="text-sm font-bold " style={{ fontSize: "150%" }}>Dịch vụ</TableHead>
+                                    <TableHead className="text-right text-sm font-bold " style={{ fontSize: "150%" }}>Chi phí</TableHead>
                                 </TableRow>
-
                             </TableHeader>
                             <TableBody>
                                 {payPerUseServices.map(service => (
                                     <TableRow key={service.name}>
                                         <TableCell className="font-medium" >{service.name}</TableCell>
-
                                         <TableCell className="text-right font-semibold text-sm">{service.price}</TableCell>
-
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -156,12 +138,11 @@ export default function FeatureComparisonPage() {
                 </Card>
             </div>
 
-
             <div className="text-center mt-12">
                 <Link href="/dashboard">
                     <Button variant="outline">
                         <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Dashboard
+                        Quay lại trang tổng quan
                     </Button>
                 </Link>
             </div>
