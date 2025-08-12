@@ -38,8 +38,8 @@ interface ContentOptimizationPayload {
 }
 
 // --- Hằng số ---
-const READABILITY_LEVELS = ["Dễ", "Trung bình", "Khó", "Nâng cao", "Chuyên gia"];
-const CONTENT_LENGTH_LEVELS = ["Ngắn", "Trung bình", "Dài", "Toàn diện", "Chi tiết"];
+const READABILITY_LEVELS = ["Easy", "Medium", "Hard", "Advanced", "Expert"];
+const CONTENT_LENGTH_LEVELS = ["Short", "Medium", "Long", "Comprehensive", "In-depth"];
 
 // --- Các hàm gọi API ---
 const createOptimization = async (payload: ContentOptimizationPayload): Promise<ContentOptimizationData> => {

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import { User, Mail, Calendar, Crown, ShieldCheck, Edit, X, Check } from 'lucide-react';
 
@@ -10,7 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from "@/hooks/use-toast"; // Đường dẫn chuẩn của shadcn/ui
+import { useToast } from "@/hooks/use-toast"; // Sửa lại đường dẫn import đúng
+import api from '@/axiosInstance'; // SỬA Ở ĐÂY 1: Dùng instance axios trung tâm
 
 // --- Interface ---
 interface UserProfile {
@@ -25,40 +25,21 @@ interface UserProfile {
   createdAt: string;
 }
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-});
-
+// SỬA Ở ĐÂY 2: Đơn giản hóa các hàm API
 // --- Hàm fetch user theo ID ---
 const fetchCurrentUser = async (userId: string | null): Promise<UserProfile> => {
   if (!userId) throw new Error("User ID không hợp lệ.");
-  
-  const storedTokens = localStorage.getItem('tokens');
-  if (!storedTokens) throw new Error("Không tìm thấy token xác thực.");
-  const { accessToken } = JSON.parse(storedTokens);
-  if (!accessToken) throw new Error("Access token không hợp lệ.");
-
-  const response = await api.get(`/Users/${userId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  
-  // API đã trả về đúng một object, nên ta trả về thẳng response.data
-  return response.data;
+  // Không cần xử lý token ở đây nữa, axiosInstance sẽ tự làm
+  const { data } = await api.get(`/Users/${userId}`);
+  return data;
 };
 
 // --- Hàm update user ---
-const updateCurrentUser = async (updatedData: { fullName: string }): Promise<UserProfile> => {
-    const storedTokens = localStorage.getItem('tokens');
-    if (!storedTokens) throw new Error("Không tìm thấy token xác thực.");
-    const { accessToken } = JSON.parse(storedTokens);
-    const decodedToken: { user_ID: string } = jwtDecode(accessToken);
-    const userId = decodedToken.user_ID;
-    if (!userId) throw new Error("Không tìm thấy User ID trong token để cập nhật.");
-
-    const response = await api.put(`/Users/${userId}`, updatedData, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    return response.data;
+const updateCurrentUser = async (updatedData: { fullName: string; userId: string | null }): Promise<UserProfile> => {
+    if (!updatedData.userId) throw new Error("Không tìm thấy User ID để cập nhật.");
+    // Không cần xử lý token ở đây nữa
+    const { data } = await api.put(`/Users/${updatedData.userId}`, { fullName: updatedData.fullName });
+    return data;
 };
 
 // --- Component trang Profile ---
@@ -69,10 +50,11 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
 
   const userId = useMemo(() => {
-    const storedTokens = localStorage.getItem('tokens');
-    if (!storedTokens) return null;
     try {
-      const { accessToken } = JSON.parse(storedTokens);
+      // Logic giải mã token để lấy userId vẫn cần thiết cho queryKey
+      const encodedTokens = localStorage.getItem('tokens');
+      if (!encodedTokens) return null;
+      const { accessToken } = JSON.parse(atob(encodedTokens));
       const decodedToken: { user_ID: string } = jwtDecode(accessToken);
       return decodedToken.user_ID;
     } catch (e) {
@@ -82,10 +64,8 @@ export default function ProfilePage() {
   }, []);
 
   const { data: user, isLoading, isError, error } = useQuery({
-    // Query key động, duy nhất cho mỗi user
     queryKey: ['currentUser', userId], 
     queryFn: () => fetchCurrentUser(userId),
-    // Chỉ chạy khi có userId
     enabled: !!userId, 
   });
 
@@ -99,7 +79,6 @@ export default function ProfilePage() {
     mutationFn: updateCurrentUser,
     onSuccess: (data) => {
       toast({ title: "Thành công", description: "Hồ sơ của bạn đã được cập nhật." });
-      // Cập nhật cache với đúng queryKey động
       queryClient.setQueryData(['currentUser', userId], data);
       setIsEditing(false);
     },
@@ -108,7 +87,9 @@ export default function ProfilePage() {
     },
   });
 
-  const handleSave = () => mutation.mutate(formData);
+  const handleSave = () => {
+    mutation.mutate({ ...formData, userId });
+  };
   const handleCancel = () => {
     if (user) setFormData({ fullName: user.fullName || user.fullname || '' });
     setIsEditing(false);
