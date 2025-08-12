@@ -12,7 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import api from "@/axiosInstance";
 import { ElementItem } from "@/types/api";
 import { useToast } from "@/hooks/use-toast";
-import { jwtDecode } from "jwt-decode"; // Thêm import
+import { jwtDecode } from "jwt-decode";
 
 interface AuditReport {
   id: number;
@@ -26,23 +26,15 @@ interface AuditReport {
 }
 
 const analyzeUrlApi = async ({ userId, url }: { userId: string, url: string }): Promise<AuditReport> => {
-  // Mã hóa URL để đảm bảo nó hợp lệ khi truyền qua query string
   const encodedUrl = encodeURIComponent(url);
   const { data } = await api.get(`/AuditReports/analyze-url/${userId}?url=${encodedUrl}`);
   return data;
 };
 
-
-
 const fetchAuditHistory = async (userId: string | null): Promise<AuditReport[]> => {
-  if (!userId) return []; // Nếu không có userId, trả về mảng rỗng
+  if (!userId) return [];
   const { data } = await api.get(`/AuditReports/user/${userId}`);
   return data.sort((a: AuditReport, b: AuditReport) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-};
-
-const createAudit = async (url: string): Promise<AuditReport> => {
-  const { data } = await api.post('/AuditReports', { url });
-  return data;
 };
 
 const fetchElementsForReport = async (reportId: number): Promise<ElementItem[]> => {
@@ -59,10 +51,10 @@ export default function SeoAudit() {
   const queryClient = useQueryClient();
 
   const userId = useMemo(() => {
-    const storedTokens = localStorage.getItem('tokens');
-    if (!storedTokens) return null;
     try {
-      const { accessToken } = JSON.parse(storedTokens);
+      const encodedTokens = localStorage.getItem('tokens');
+      if (!encodedTokens) return null;
+      const { accessToken } = JSON.parse(atob(encodedTokens));
       const decodedToken: { user_ID: string } = jwtDecode(accessToken);
       return decodedToken.user_ID;
     } catch (e) {
@@ -71,28 +63,17 @@ export default function SeoAudit() {
     }
   }, []);
 
-  // SỬA Ở ĐÂY 3: Cập nhật useQuery cho history
   const { data: history, isLoading: isLoadingHistory } = useQuery({
-    queryKey: ['auditHistory', userId], // Thêm userId vào queryKey
-    queryFn: () => fetchAuditHistory(userId), // Truyền userId vào hàm fetch
-    enabled: !!userId, // Chỉ chạy khi đã có userId
+    queryKey: ['auditHistory', userId],
+    queryFn: () => fetchAuditHistory(userId),
+    enabled: !!userId,
   });
-
-
-  const getScoreColor = (score: number) => {
-    if (score <= 60) return "#ef4444"; // Màu đỏ (red-500)
-    if (score <= 80) return "#f59e0b"; // Màu vàng (amber-500)
-    return "#22c55e"; // Màu xanh lá (green-500)
-  };
-
 
   const mutation = useMutation({
     mutationFn: analyzeUrlApi,
     onSuccess: (newReport) => {
       toast({ title: "Phân tích hoàn tất!", description: `Đã có kết quả cho ${newReport.url}` });
       setSelectedReport(newReport);
-      // Làm mới lại danh sách lịch sử để nó hiển thị kết quả mới nhất
-
       queryClient.invalidateQueries({ queryKey: ['auditHistory', userId] });
     },
     onError: (error) => {
@@ -114,27 +95,10 @@ export default function SeoAudit() {
   }, [selectedReport]);
 
   const handleAnalyzeClick = () => {
-    if (!url) {
-      toast({ title: "Lỗi", description: "Vui lòng nhập một URL.", variant: "destructive" });
+    if (!url || !userId) {
+      toast({ title: "Lỗi", description: "Vui lòng nhập URL và đảm bảo bạn đã đăng nhập.", variant: "destructive" });
       return;
     }
-
-    // Lấy userId từ token để gửi đi
-    const storedTokens = localStorage.getItem('tokens');
-    if (!storedTokens) {
-      toast({ title: "Lỗi", description: "Vui lòng đăng nhập lại.", variant: "destructive" });
-      return;
-    }
-    const { accessToken } = JSON.parse(storedTokens);
-    const decodedToken: { user_ID: string } = jwtDecode(accessToken);
-    const userId = decodedToken.user_ID;
-
-    if (!userId) {
-      toast({ title: "Lỗi", description: "Không thể xác thực người dùng.", variant: "destructive" });
-      return;
-    }
-
-    // Kích hoạt mutation với cả userId và url
     mutation.mutate({ userId, url });
   };
 
@@ -144,11 +108,11 @@ export default function SeoAudit() {
     return "pass";
   };
 
-  const passedCount = useMemo(() => {
-    if (!auditElements) return 0;
-    return auditElements.filter(item => mapStatus(item.status) === 'pass').length;
-  }, [auditElements]);
-
+  const getScoreColor = (score: number) => {
+    if (score <= 60) return "#ef4444"; // red-500
+    if (score <= 80) return "#f59e0b"; // amber-500
+    return "#22c55e"; // green-500
+  };
 
   return (
     <div className="space-y-6">
@@ -157,16 +121,12 @@ export default function SeoAudit() {
         <p className="text-gray-500 dark:text-gray-400">
           Phân tích toàn diện tình trạng SEO và hiệu suất website của bạn
         </p>
-
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Phân tích Website</CardTitle>
-              <CardDescription>Nhập URL để bắt đầu phân tích</CardDescription>
-            </CardHeader>
+            <CardHeader><CardTitle>Phân tích Website</CardTitle><CardDescription>Nhập URL để bắt đầu</CardDescription></CardHeader>
             <CardContent>
               <div className="flex items-center space-x-2">
                 <div className="relative flex-1">
@@ -174,15 +134,8 @@ export default function SeoAudit() {
                   <Input className="pl-9" placeholder="https://example.com" value={url} onChange={(e) => setUrl(e.target.value)} />
                 </div>
                 <Button className="flex items-center gap-2" onClick={handleAnalyzeClick} disabled={mutation.isPending}>
-                  {mutation.isPending
-                    ? "Đang phân tích..."
-                    : <>
-                      <Search className="h-4 w-4" />
-                      <span>Phân tích</span>
-                    </>
-                  }
+                  {mutation.isPending ? "Đang phân tích..." : <><Search className="h-4 w-4" /><span>Phân tích</span></>}
                 </Button>
-
               </div>
             </CardContent>
           </Card>
@@ -224,22 +177,20 @@ export default function SeoAudit() {
             <div className="space-y-6 animate-in fade-in-50">
               <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
                 <CardHeader>
-                  <CardTitle>Audit results for:</CardTitle>
+                  <CardTitle>Kết quả Audit cho:</CardTitle>
                   <a href={selectedReport.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline break-all">{selectedReport.url}</a>
                 </CardHeader>
                 <CardContent className="pt-2">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                     <div className="flex justify-center md:justify-start">
-
                       <CircularProgress
                         progress={selectedReport.overallScore}
                         color={getScoreColor(selectedReport.overallScore)}
                       />
                     </div>
-
                     <div className="grid grid-cols-2 gap-3 md:col-span-3">
-                      <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-red-100 rounded-full p-2"><XCircle className="h-5 w-5 text-red-600" /></div><div><p className="text-sm text-muted-foreground">Critical Issues</p><p className="text-xl font-bold">{selectedReport.criticalIssue}</p></div></CardContent></Card>
-                      <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-amber-100 rounded-full p-2"><AlertCircle className="h-5 w-5 text-amber-600" /></div><div><p className="text-sm text-muted-foreground">Warnings</p><p className="text-xl font-bold">{selectedReport.warning}</p></div></CardContent></Card>
+                      <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-red-100 rounded-full p-2"><XCircle className="h-5 w-5 text-red-600" /></div><div><p className="text-sm text-muted-foreground">Nghiêm trọng</p><p className="text-xl font-bold">{selectedReport.criticalIssue}</p></div></CardContent></Card>
+                      <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-amber-100 rounded-full p-2"><AlertCircle className="h-5 w-5 text-amber-600" /></div><div><p className="text-sm text-muted-foreground">Cảnh báo</p><p className="text-xl font-bold">{selectedReport.warning}</p></div></CardContent></Card>
                       <Card>
                         <CardContent className="p-4 flex items-center space-x-3">
                           <div className="bg-green-100 rounded-full p-2"><CheckCircle className="h-5 w-5 text-green-600" /></div>
@@ -251,7 +202,7 @@ export default function SeoAudit() {
                           </div>
                         </CardContent>
                       </Card>
-                      <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-blue-100 rounded-full p-2"><Lightbulb className="h-5 w-5 text-blue-600" /></div><div><p className="text-sm text-muted-foreground">Opportunities</p><p className="text-xl font-bold">{selectedReport.opportunity}</p></div></CardContent></Card>
+                      <Card><CardContent className="p-4 flex items-center space-x-3"><div className="bg-blue-100 rounded-full p-2"><Lightbulb className="h-5 w-5 text-blue-600" /></div><div><p className="text-sm text-muted-foreground">Cơ hội</p><p className="text-xl font-bold">{selectedReport.opportunity}</p></div></CardContent></Card>
                     </div>
                   </div>
                 </CardContent>

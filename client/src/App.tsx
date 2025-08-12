@@ -18,10 +18,10 @@ import LandingPage from '@/pages/LandingPage';
 import Auth from '@/components/loginGoogle/Auth';
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import FeatureComparisonPage from '@/pages/FeatureComparisonPage'; // Import trang mới
-import AdminPage from '@/pages/AdminPage'; // 1. Import trang Admin mới
-
-
+import FeatureComparisonPage from '@/pages/FeatureComparisonPage';
+import AdminPage from '@/pages/AdminPage';
+// Bạn có thể xóa dòng UsersPage nếu không dùng đến trang này nữa
+import UsersPage from '@/pages/UsersPage'; 
 
 // Định nghĩa interface UserProfile
 interface UserProfile {
@@ -33,13 +33,12 @@ interface UserProfile {
 // --- Component Layout chính của ứng dụng cho người dùng đã đăng nhập ---
 function MainAppLayout({ onLogout, user }: { onLogout: () => void; user: UserProfile }) {
   const [location] = useLocation();
-  // Các trang không cần sidebar
   const noSidebarRoutes = ['/feature-comparison'];
   const showSidebar = !noSidebarRoutes.includes(location);
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      {showSidebar && <Sidebar />}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header onLogout={onLogout} user={user} />
         <main className="flex-1 overflow-y-auto bg-background p-4">
@@ -51,11 +50,11 @@ function MainAppLayout({ onLogout, user }: { onLogout: () => void; user: UserPro
             <Route path="/on-page-optimization" component={OnPageOptimization} />
             <Route path="/backlink-analysis" component={BacklinkAnalysis} />
             <Route path="/content-optimization" component={ContentOptimization} />
+            <Route path="/users" component={UsersPage} />
             <Route path="/profile" component={ProfilePage} />
             <Route path="/pricing" component={PricingPage} />
-
             <Route path="/feature-comparison" component={FeatureComparisonPage} />
-
+            
             {/* Nếu người dùng đã đăng nhập mà vào trang gốc, tự động chuyển đến dashboard */}
             <Route path="/"><Redirect to="/dashboard" /></Route>
             <Route component={NotFound} />
@@ -71,17 +70,23 @@ function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [, navigate] = useLocation();
 
-  // useEffect này chỉ chạy một lần để kiểm tra xem user đã đăng nhập từ trước chưa
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const encodedUser = localStorage.getItem('user');
+    if (encodedUser) {
+      try {
+        const decodedUser = JSON.parse(atob(encodedUser));
+        setUser(decodedUser);
+      } catch (error) {
+        console.error("Lỗi khi giải mã user từ localStorage", error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('tokens');
+      }
     }
   }, []);
 
   const handleLoginSuccess = (loggedInUser: UserProfile) => {
     setUser(loggedInUser);
-    localStorage.setItem('user', JSON.stringify(loggedInUser));
+    // Logic lưu vào localStorage đã được xử lý trong Auth.tsx
     navigate('/dashboard'); 
   };
   
@@ -94,7 +99,6 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* SỬA Ở ĐÂY: Cấu trúc lại Switch để ưu tiên route /admin */}
       <Switch>
         {/* Route /admin sẽ luôn được kiểm tra trước và luôn truy cập được */}
         <Route path="/admin" component={AdminPage} />

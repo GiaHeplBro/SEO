@@ -1,11 +1,7 @@
 import React from 'react';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode'; // SỬA Ở ĐÂY 1: Import jwt-decode
-import { Sparkles } from 'lucide-react'; // Import icon để làm logo
-
-
-// Import Card component từ shadcn/ui
+import { jwtDecode } from 'jwt-decode';
+import { Sparkles } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -14,21 +10,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-// Định nghĩa kiểu dữ liệu UserProfile để khớp với dữ liệu trong token
+// SỬA Ở ĐÂY 1: Import instance axios trung tâm
+import api from '@/axiosInstance'; 
+
+// Định nghĩa kiểu dữ liệu UserProfile
 interface UserProfile {
-  // Thêm các trường có trong token của bạn
   email?: string;
-  fullname?: string; // Chú ý: trong token có thể là 'fullname' hoặc 'fullName'
+  fullname?: string;
   role?: string;
-  // Các trường chuẩn của JWT
   exp?: number;
   iat?: number;
 }
 
-// Khởi tạo axios instance
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-});
+// SỬA Ở ĐÂY 2: Xóa bỏ việc tạo axios instance cục bộ
+// const api = axios.create({ ... });
 
 // Component Auth
 const Auth: React.FC<{ onLoginSuccess: (user: UserProfile) => void }> = ({ onLoginSuccess }) => {
@@ -40,31 +35,27 @@ const Auth: React.FC<{ onLoginSuccess: (user: UserProfile) => void }> = ({ onLog
     }
 
     try {
+      // Bây giờ 'api' đã là instance có sẵn interceptor để tự động thêm token
       const response = await api.post(
         '/Authens/login-with-google',
         JSON.stringify(credentialResponse.credential),
         { headers: { 'Content-Type': 'application/json' } }
       );
       
-      // SỬA Ở ĐÂY 2: Thay đổi toàn bộ logic xử lý response
       if (response.data && response.data.success && response.data.accessToken) {
         
         const { accessToken, refreshToken } = response.data;
-
-        // BƯỚC QUAN TRỌNG: Giải mã accessToken để lấy thông tin user
         const decodedUser: UserProfile = jwtDecode(accessToken);
         
-        // Đổi tên 'fullname' thành 'fullName' để khớp với các component khác (nếu cần)
         const userToStore = {
             ...decodedUser,
             fullName: decodedUser.fullname 
         };
 
-        // Lưu user đã giải mã và tokens vào localStorage
-        localStorage.setItem('user', JSON.stringify(userToStore));
-        localStorage.setItem('tokens', JSON.stringify({ accessToken, refreshToken }));
+        // Mã hóa và lưu vào localStorage
+        localStorage.setItem('user', btoa(JSON.stringify(userToStore)));
+        localStorage.setItem('tokens', btoa(JSON.stringify({ accessToken, refreshToken })));
 
-        // Gọi callback để báo cho App.tsx biết đã đăng nhập thành công
         onLoginSuccess(userToStore);
 
       } else {
@@ -84,14 +75,12 @@ const Auth: React.FC<{ onLoginSuccess: (user: UserProfile) => void }> = ({ onLog
   };
 
   return (
-    // Container chính với ảnh nền
     <div 
       className="flex min-h-screen w-full items-center justify-center bg-cover bg-center p-4"
       style={{
         backgroundImage: `url('https://firebasestorage.googleapis.com/v0/b/imageuploadv3.appspot.com/o/TestFile%2F3d-network-communications-background-with-flowing-floating-particles.jpg?alt=media&token=dd55b96f-4e4f-454b-869a-ef54b22241c5')`,
       }}
     >
-      {/* Thẻ đăng nhập với hiệu ứng kính mờ */}
       <Card className="w-full max-w-md bg-black/30 backdrop-blur-lg border-white/20 text-white animate-in fade-in-50 slide-in-from-bottom-10 duration-500">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -106,12 +95,11 @@ const Auth: React.FC<{ onLoginSuccess: (user: UserProfile) => void }> = ({ onLog
         </CardHeader>
         <CardContent>
           <div className="flex justify-center py-4">
-            {/* Nút đăng nhập của Google */}
             <GoogleLogin
               onSuccess={handleGoogleLoginSuccess}
               onError={handleGoogleLoginError}
               useOneTap
-              theme="filled_black" // Theme màu tối cho hợp với nền
+              theme="filled_black"
               shape="pill"
             />
           </div>

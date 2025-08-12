@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState, useMemo } from "react";
-import api from "@/axiosInstance";
+import api from "@/axiosInstance"; // Quan trọng: Mọi API call đều dùng instance này
 import { useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { jwtDecode } from 'jwt-decode';
@@ -32,11 +32,11 @@ interface Keyword {
     trend: string;
     intent: string;
 }
-interface RankTrackingItem {
-    id: number;
-    userId: number;
-    keyword: string;
-    rank: number;
+interface RankTrackingItem { 
+    id: number; 
+    userId: number; 
+    keyword: string; 
+    rank: number; 
 }
 interface PaginatedResponse<T> {
     items: T[];
@@ -47,6 +47,7 @@ interface PaginatedResponse<T> {
 
 
 // --- Các hàm gọi API ---
+// Tất cả các hàm này đều dùng 'api' instance đã được import, nên sẽ tự động có token
 const searchKeywordsApi = async ({ keyword, pageParam = 1 }: { keyword: string; pageParam?: number }): Promise<PaginatedResponse<Keyword>> => {
     if (!keyword.trim()) {
         return { items: [], totalPages: 0, totalItems: 0, currentPage: 1 };
@@ -85,16 +86,11 @@ const addRankTrackingApi = async ({ userId, keyword }: { userId: string, keyword
 };
 
 const updateRankTrackingApi = async (userId: string) => {
-    // Gửi userId dưới dạng số nguyên, không phải object
     const { data } = await api.post('/RankTrackings/update-rank-tracking', parseInt(userId, 10), {
-        headers: {
-            'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
     });
     return data;
 };
-
-
 
 export default function KeywordAnalysis() {
     const [filterTerm, setFilterTerm] = useState("");
@@ -105,8 +101,9 @@ export default function KeywordAnalysis() {
     const { toast } = useToast();
     const userId = useMemo(() => {
         try {
-            const storedTokens = localStorage.getItem('tokens');
-            const { accessToken } = JSON.parse(storedTokens!);
+            const encodedTokens = localStorage.getItem('tokens');
+            if (!encodedTokens) return null;
+            const { accessToken } = JSON.parse(atob(encodedTokens));
             const decodedToken: { user_ID: string } = jwtDecode(accessToken);
             return decodedToken.user_ID;
         } catch { return null; }
@@ -163,10 +160,9 @@ export default function KeywordAnalysis() {
         mutationFn: updateRankTrackingApi,
         onSuccess: () => {
             toast({ title: "Đang cập nhật", description: "Hệ thống đang cập nhật lại thứ hạng. Danh sách sẽ được làm mới sau giây lát." });
-            // Sau khi API chạy xong, làm mới lại query để lấy dữ liệu mới
             setTimeout(() => {
                 queryClient.invalidateQueries({ queryKey: ['rankTrackings', userId] });
-            }, 5000); // Chờ 5 giây để backend có thể đã cập nhật xong
+            }, 5000); 
         },
         onError: (error) => {
             toast({ title: "Thất bại", description: error.message, variant: 'destructive' });
@@ -185,7 +181,7 @@ export default function KeywordAnalysis() {
         if (!newTrackingKeyword || !userId) return;
         addTrackingMutation.mutate({ userId, keyword: newTrackingKeyword });
     };
-
+    
     const handleUpdateRankClick = () => {
         if (!userId) {
             toast({ title: "Lỗi", description: "Không thể xác thực người dùng.", variant: "destructive" });
@@ -242,9 +238,9 @@ export default function KeywordAnalysis() {
                         <CardHeader className="pb-2">
                             <CardTitle>Kết quả phân tích từ khóa</CardTitle>
                             <CardDescription>
-                                {isSearching ? `Searching...` :
-                                    debouncedFilterTerm ? `Found ${searchedData?.pages[0]?.totalItems || 0} results for "${debouncedFilterTerm}"` :
-                                        "Nhập từ khóa vào ô tìm kiếm để bắt đầu."}
+                                {isSearching ? `Searching...` : 
+                                 debouncedFilterTerm ? `Found ${searchedData?.pages[0]?.totalItems || 0} results for "${debouncedFilterTerm}"` :
+                                 "Nhập từ khóa vào ô tìm kiếm để bắt đầu."}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -319,18 +315,16 @@ export default function KeywordAnalysis() {
                         </CardContent>
                     </Card>
                     <Card>
-
-
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <div>
                                     <CardTitle>Theo dõi thứ hạng từ khóa</CardTitle>
                                     <CardDescription>Vị trí các từ khóa bạn đang theo dõi.</CardDescription>
                                 </div>
-                                <Button
-                                    variant="outline"
+                                <Button 
+                                    variant="outline" 
                                     size="sm"
-                                    onClick={handleUpdateRankClick} // SỬA Ở ĐÂY: Gọi hàm xử lý mới
+                                    onClick={handleUpdateRankClick}
                                     disabled={updateRankMutation.isPending}
                                 >
                                     {updateRankMutation.isPending ? (
@@ -342,7 +336,6 @@ export default function KeywordAnalysis() {
                                 </Button>
                             </div>
                         </CardHeader>
-
                         <CardContent>
                             {isLoadingRankings ? <div className="text-center p-12">Loading...</div> :
                                 <Table>
