@@ -32,15 +32,16 @@ interface UserProfile {
 
 // --- Component Layout chính của ứng dụng cho người dùng đã đăng nhập ---
 function MainAppLayout({ onLogout, user }: { onLogout: () => void; user: UserProfile }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location] = useLocation();
   const noSidebarRoutes = ['/feature-comparison'];
   const showSidebar = !noSidebarRoutes.includes(location);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {showSidebar && <Sidebar />}
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-800">
+      {showSidebar && <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onLogout={onLogout} user={user} />
+        <Header onLogout={onLogout} user={user} setSidebarOpen={setSidebarOpen} />
         <main className="flex-1 overflow-y-auto bg-background p-4">
           <Switch>
             {/* SỬA Ở ĐÂY: Đảm bảo chứa tất cả các route của bạn */}

@@ -1,11 +1,9 @@
 import { useState } from "react";
-// SỬA Ở ĐÂY 1: Thêm "User as UserIcon" để tránh trùng tên và "LogOut"
-import { Bell, Search, Sparkles, Globe, Zap, User as UserIcon, LogOut, Tags } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Bell, Sparkles, Zap, User as UserIcon, LogOut, Tags, Menu } from "lucide-react"; // Thêm icon Menu
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useLocation, Link } from "wouter"; // SỬA Ở ĐÂY 2: Thêm "Link" từ wouter
+import { useLocation, Link } from "wouter";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,9 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-
-
-// --- Các hằng số và interface giữ nguyên ---
 const pathToTitle: Record<string, string> = {
   "/": "Dashboard",
   "/keyword-analysis": "Keyword Analysis",
@@ -25,17 +20,15 @@ const pathToTitle: Record<string, string> = {
   "/on-page-optimization": "On-Page Optimization",
   "/content-optimization": "Content Optimization",
   "/profile": "Hồ sơ của tôi",
-  "/pricing": "Nâng Cấp Tài Khoản", // Thêm dòng này
-  "/feature-comparison": "Pricing Details", // Thêm dòng này
-
+  "/pricing": "Upgrade Plan",
+  "/feature-comparison": "Pricing Details",
 };
 
 const pathToDescription: Record<string, string> = {
   "/": "Overview of your SEO performance and recent optimizations",
   "/profile": "Xem và chỉnh sửa thông tin cá nhân của bạn",
-  "/pricing": "Chọn gói mà bạn muốn nâng cấp", // Thêm dòng này
-  "/feature-comparison": "A detailed look at our features and plans", // Thêm dòng này
-
+  "/pricing": "Choose a plan that fits your needs",
+  "/feature-comparison": "A detailed look at our features and plans",
 };
 
 interface UserProfile {
@@ -44,64 +37,61 @@ interface UserProfile {
   picture?: string;
 }
 
+// SỬA Ở ĐÂY 1: Thêm prop setSidebarOpen vào interface
 interface HeaderProps {
   onLogout: () => void;
   user: UserProfile;
+  setSidebarOpen: (open: boolean) => void;
 }
 
 const getAvatarFallback = (name?: string): string => {
   if (!name) return "??";
   const parts = name.split(" ");
-  if (parts.length > 1) {
-    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
+  return parts.length > 1 ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase() : name.substring(0, 2).toUpperCase();
 };
 
-
-export default function Header({ onLogout, user }: HeaderProps) {
+export default function Header({ onLogout, user, setSidebarOpen }: HeaderProps) {
   const [location] = useLocation();
   const [notificationCount] = useState(2);
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
       <div className="flex justify-between items-center px-4 py-3">
-        {/* Phần tiêu đề không đổi */}
+        {/* SỬA Ở ĐÂY 2: Giao diện Header cho di động */}
+        <div className="flex items-center md:hidden">
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="mr-2">
+            <Menu className="h-6 w-6" />
+          </Button>
+          <Link href="/dashboard">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent cursor-pointer">
+              SEOBoostAI
+            </h1>
+          </Link>
+        </div>
+
+        {/* Giao diện Header cho desktop */}
         <div className="md:flex md:flex-col md:gap-1 hidden">
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
             {pathToTitle[location] || "Dashboard"}
             {location === '/content-optimization' && <Sparkles className="ml-2 h-5 w-5 text-yellow-500" />}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400">
-            {pathToDescription[location] || ""}
-          </p>
+          <p className="text-gray-500 dark:text-gray-400">{pathToDescription[location] || ""}</p>
         </div>
 
-        {/* Phần còn lại của header không đổi */}
-        <Link href="/dashboard">
-          <div className="flex items-center md:hidden cursor-pointer">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-              SEOBoostAI
-            </h1>
-          </div>
-        </Link>
-
         <div className="flex items-center gap-2">
-          
-           <Link href="/feature-comparison">
+          {/* ... các nút Bảng giá, Upgrade, Bell, Avatar giữ nguyên ... */}
+          <Link href="/feature-comparison">
             <Button variant="outline" size="sm" className="hidden md:flex items-center gap-2">
               <Tags className="h-4 w-4" />
               <span>Bảng giá</span>
             </Button>
           </Link>
-
           <Link href="/pricing">
             <Button size="sm" className="hidden md:flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
               <Zap className="h-4 w-4" />
-              <span>Nâng Cấp</span>
+              <span>Upgrade</span>
             </Button>
           </Link>
-
           <div className="relative">
             <button className="relative p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none">
               <Bell className="h-5 w-5" />
@@ -112,8 +102,6 @@ export default function Header({ onLogout, user }: HeaderProps) {
               )}
             </button>
           </div>
-
-          {/* SỬA Ở ĐÂY 3: Cập nhật nội dung của DropdownMenu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="ml-3 flex items-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full">
@@ -133,23 +121,18 @@ export default function Header({ onLogout, user }: HeaderProps) {
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
               <DropdownMenuSeparator />
-
-              {/* === PHẦN THÊM VÀO ĐÂY === */}
               <Link href="/profile">
                 <DropdownMenuItem className="cursor-pointer">
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Hồ sơ</span>
                 </DropdownMenuItem>
               </Link>
-              {/* === KẾT THÚC PHẦN THÊM VÀO === */}
-
               <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Đăng xuất</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
         </div>
       </div>
     </header>
