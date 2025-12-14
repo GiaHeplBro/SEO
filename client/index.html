@@ -12,13 +12,21 @@
     <meta property="og:url" content="https://example.com/your-page-url" />
     <meta property="og:type" content="website" />
     <link rel="canonical" href="https://example.com/your-page-url" />
-    <link rel="preload" as="style" href="/assets/index-B-jq7fcv.css" crossorigin="" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" crossorigin="" href="/assets/index-B-jq7fcv.css" /></noscript>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function() {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/assets/index-B-jq7fcv.css';
+        link.crossOrigin = '';
+        document.head.appendChild(link);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx" defer crossorigin=""></script>
     <!-- This script injects a replit badge into the page, please feel free to remove this line -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-badge-v3.js"></script>
+    <script type="text/javascript" src="https://replit.com/public/js/replit-badge-v3.js" defer></script>
   </body>
 </html>
